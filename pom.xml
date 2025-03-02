@@ -17,7 +17,7 @@
 		<java.version>21</java.version> <!-- Thay đổi từ 23 thành 21 -->
 		<mapstruct.version>1.5.5.Final</mapstruct.version>
 	</properties>
-	<packaging>jar</packaging>
+	<packaging>war</packaging>
 	<repositories>
 		<repository>
 			<id>central</id>
@@ -117,6 +117,11 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>com.microsoft.azure</groupId>
+				<artifactId>azure-webapp-maven-plugin</artifactId>
+				<version>2.9.0</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
