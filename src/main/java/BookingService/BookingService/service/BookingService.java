@@ -2,10 +2,7 @@
 
     import BookingService.BookingService.dto.request.BookingRequest;
     import BookingService.BookingService.dto.response.BookingResponse;
-    import BookingService.BookingService.entity.Booking;
-    import BookingService.BookingService.entity.Schedule;
-    import BookingService.BookingService.entity.ServiceEntity;
-    import BookingService.BookingService.entity.User;
+    import BookingService.BookingService.entity.*;
     import BookingService.BookingService.enums.BookingStatus;
     import BookingService.BookingService.enums.PaymentStatus;
     import BookingService.BookingService.enums.Role;
@@ -368,6 +365,7 @@
         }
 
         public BookingResponse checkOutBooking(Long bookingId) {
+            // Tìm booking
             Booking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_EXISTED));
 
@@ -375,11 +373,31 @@
                 throw new AppException(ErrorCode.BOOKING_NOT_EXISTED);
             }
 
+            // Kiểm tra trạng thái thanh toán từ entity Payment
+            Payment payment = booking.getPayment();
+            if (payment == null) {
+                throw new AppException(ErrorCode.PAYMENT_NOT_FOUND);
+            }
+
+            if (!PaymentStatus.SUCCESS.equals(payment.getStatus())) {
+                throw new AppException(ErrorCode.PAYMENT_NOT_COMPLETED);
+            }
+
+            // Kiểm tra số tiền thanh toán có khớp với totalPrice không
+            if (!booking.getTotalPrice().equals(payment.getAmount())) {
+                throw new AppException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
+            }
+
+            // Đồng bộ paymentStatus trong Booking với Payment
+            booking.setPaymentStatus(payment.getStatus());
+
+            // Thực hiện checkout
             booking.setCheckOutTime(LocalDateTime.now());
             booking.setStatus(BookingStatus.COMPLETED);
             booking.setUpdatedAt(LocalDateTime.now());
             bookingRepository.save(booking);
 
+            // Chuẩn bị email
             String subject = "Hoàn tất dịch vụ tại Beautya!";
             String htmlBody = "<!DOCTYPE html>" +
                     "<html><head><style>" +
@@ -407,7 +425,6 @@
 
             return bookingMapper.toResponse(booking);
         }
-
         public List<BookingResponse> getBookingsForCurrentUser() {
             String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
             User currentUser = userRepository.findByEmail(currentUserEmail)

@@ -35,8 +35,9 @@ public enum ErrorCode {
     BOOKING_DATE_IN_PAST(1041, "Booking date must be in the future", HttpStatus.BAD_REQUEST),
     BOOKING_DURATION_EXCEEDS_TIME_SLOT(1042, "Total service duration exceeds time slot", HttpStatus.BAD_REQUEST),
     BOOKING_CANCEL_TIME_EXPIRED(1043, "Cannot cancel booking less than 24 hours before start time", HttpStatus.BAD_REQUEST),
-
-    // ✅ Thêm lỗi cho Quiz
+    PAYMENT_NOT_FOUND(1044, "Payment not found for this booking", HttpStatus.NOT_FOUND),
+    PAYMENT_NOT_COMPLETED(1045, "Payment has not been completed", HttpStatus.BAD_REQUEST),
+    PAYMENT_AMOUNT_MISMATCH(1046, "Payment amount does not match booking total price", HttpStatus.BAD_REQUEST),
     QUIZ_QUESTION_NOT_FOUND(1040, "Quiz question not found", HttpStatus.NOT_FOUND),
     DATA_ALREADY_EXISTS(1042, "Data already exists", HttpStatus.BAD_REQUEST),
     QUIZ_ANSWER_NOT_FOUND(1041, "Quiz answer not found", HttpStatus.NOT_FOUND);
