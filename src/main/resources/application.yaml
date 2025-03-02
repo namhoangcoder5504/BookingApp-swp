@@ -1,11 +1,12 @@
 server:
   port: 8080
+  forward-headers-strategy: native
 
 spring:
   datasource:
-    url: "jdbc:mysql://20.198.250.97:3306/BookingService"
-    username: user
-    password: abcd1234
+    url: "jdbc:mysql://localhost:3306/BookingService"
+    username: root
+    password: root
   jpa:
     hibernate:
       ddl-auto: update

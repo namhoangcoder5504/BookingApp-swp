@@ -21,8 +21,8 @@ jobs:
       - name: Set up Java version
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: 'java21'
+          distribution: 'microsoft'
 
       - name: Build with Maven
         run: mvn clean install
@@ -45,8 +45,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: java-app
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
