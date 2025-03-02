@@ -45,6 +45,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: java-app
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
