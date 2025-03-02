@@ -23,7 +23,7 @@ public class Payment {
     Long paymentId;
 
     @OneToOne
-    @JoinColumn(name = "booking_id", nullable = false)
+    @JoinColumn(name = "booking_id", nullable = false, unique = true)
     Booking booking;
 
     // Số tiền cần thanh toán (thông thường = booking.totalPrice)
@@ -34,12 +34,13 @@ public class Payment {
     @Column(name = "payment_method", nullable = false)
     String paymentMethod;
 
-    // Mã giao dịch trả về từ VNPAY
-    @Column(name = "transaction_id", unique = true)
+    // Mã giao dịch trả về từ VNPAY, đảm bảo duy nhất
+    @Column(name = "transaction_id", unique = true, nullable = false)
     String transactionId;
 
     // PENDING, SUCCESS, FAILED
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     PaymentStatus status;
 
     // Thời điểm xác nhận thanh toán

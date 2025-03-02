@@ -7,6 +7,7 @@
     import BookingService.BookingService.entity.ServiceEntity;
     import BookingService.BookingService.entity.User;
     import BookingService.BookingService.enums.BookingStatus;
+    import BookingService.BookingService.enums.PaymentStatus;
     import BookingService.BookingService.enums.Role;
     import BookingService.BookingService.exception.AppException;
     import BookingService.BookingService.exception.ErrorCode;
@@ -109,6 +110,7 @@
 
             booking.setTotalPrice(totalPrice);
             booking.setStatus(BookingStatus.PENDING);
+            booking.setPaymentStatus(PaymentStatus.PENDING);
             booking.setCreatedAt(LocalDateTime.now());
             booking.setUpdatedAt(LocalDateTime.now());
 

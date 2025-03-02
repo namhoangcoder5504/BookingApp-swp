@@ -2,6 +2,7 @@ package BookingService.BookingService.dto.response;
 
 
 import BookingService.BookingService.enums.BookingStatus;
+import BookingService.BookingService.enums.PaymentStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -21,4 +22,5 @@ public class BookingResponse {
     private BigDecimal totalPrice;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private PaymentStatus paymentStatus;
 }

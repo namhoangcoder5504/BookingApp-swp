@@ -47,7 +47,8 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/auth/google",       // Thêm endpoint cho Google login
             "/oauth2/authorization/google", // Endpoint bắt đầu OAuth2 Google
-            "/login/oauth2/code/google"    // Callback từ Google
+            "/login/oauth2/code/google",    // Callback từ Google
+            "/api/v1/vnpay/payment-info"
     };
 
     @Value("${jwt.signerKey}")

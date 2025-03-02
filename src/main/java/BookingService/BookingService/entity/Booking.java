@@ -59,7 +59,6 @@ public class Booking {
 
     @Enumerated(EnumType.STRING)
     PaymentStatus paymentStatus;
-    // PENDING (đang chờ thanh toán), SUCCESS (thanh toán thành công), FAILED (thất bại)...
 
     @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL)
     Payment payment;
