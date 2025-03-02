@@ -19,10 +19,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Java version
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: 'java21'
-          distribution: 'microsoft'
 
       - name: Build with Maven
         run: mvn clean install
