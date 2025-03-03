@@ -17,7 +17,7 @@
 		<java.version>21</java.version> <!-- Thay đổi từ 23 thành 21 -->
 		<mapstruct.version>1.5.5.Final</mapstruct.version>
 	</properties>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<repositories>
 		<repository>
 			<id>central</id>
