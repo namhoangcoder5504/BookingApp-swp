@@ -75,9 +75,21 @@ public class UserController {
         }
         return response;
     }
+    @GetMapping("/profile")
+    public UserResponse getUserProfile() {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userService.getUserProfileByEmail(currentUserEmail); // Trả về DTO thay vì entity
+    }
 
+
+    @PutMapping("/profile")
+    public UserResponse updateProfile(@RequestBody UserUpdateRequest request) {
+        return userService.updateProfileUser(request);
+    }
     // Cập nhật thông tin user
+
     @PutMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponse updateUser(@PathVariable Long userId, @RequestBody UserUpdateRequest request) {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()

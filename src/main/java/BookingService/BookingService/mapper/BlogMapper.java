@@ -13,5 +13,6 @@ public interface BlogMapper {
     @Mapping(source = "createdAt", target = "createdAt")
     @Mapping(source = "updatedAt", target = "updatedAt")
     @Mapping(source = "author", target = "author") // UserMapper sẽ xử lý author
+    @Mapping(source = "images", target = "images")
     BlogResponse toResponse(Blog blog);
 }

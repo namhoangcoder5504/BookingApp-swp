@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ImageResponse {
     private Long imageId;
+    Long blogId;
     private String url;
     private LocalDateTime createdAt;
     private Long serviceId;

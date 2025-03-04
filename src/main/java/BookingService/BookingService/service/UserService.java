@@ -15,6 +15,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -83,6 +84,12 @@ public class UserService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
     }
 
+    public UserResponse getUserProfileByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        return userMapper.toUserResponse(user);
+    }
+
 
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
@@ -126,6 +133,29 @@ public class UserService {
 
         // Trả về DTO
         return userMapper.toUserResponse(user);
+    }
+
+    public UserResponse updateProfileUser(UserUpdateRequest request) {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (request.getCurrentPassword() == null || !passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new AppException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        userMapper.updateUser(user, request); // Gọi trước
+
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            if (!request.getPassword().equals(request.getConfirmPassword())) {
+                throw new AppException(ErrorCode.PASSWORD_NOT_MATCH);
+            }
+            user.setPassword(passwordEncoder.encode(request.getPassword())); // Set sau
+        }
+
+        user.setUpdatedAt(LocalDateTime.now());
+        User savedUser = userRepository.save(user);
+        return userMapper.toUserResponse(savedUser);
     }
 
     /**

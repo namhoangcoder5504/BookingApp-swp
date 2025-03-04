@@ -48,7 +48,12 @@ public class SecurityConfig {
             "/auth/google",       // Thêm endpoint cho Google login
             "/oauth2/authorization/google", // Endpoint bắt đầu OAuth2 Google
             "/login/oauth2/code/google",    // Callback từ Google
-            "/api/v1/vnpay/payment-info"
+            "/api/v1/vnpay/payment-info",
+            "/test",
+            "/api/services",
+            "/api/blogs",
+            "/api/quiz/questions-with-answers"
+
     };
 
     @Value("${jwt.signerKey}")

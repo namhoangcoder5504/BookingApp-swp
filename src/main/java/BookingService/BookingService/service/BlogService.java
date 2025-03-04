@@ -16,44 +16,44 @@ public class BlogService {
     @Autowired
     private BlogRepository blogRepository;
 
-    /**
-     * Lấy danh sách tất cả Blog
-     */
     public List<Blog> getAllBlogs() {
         return blogRepository.findAll();
     }
 
-    /**
-     * Tìm Blog theo id
-     */
     public Optional<Blog> getBlogById(Long id) {
         return blogRepository.findById(id);
     }
 
-    /**
-     * Tạo mới Blog
-     */
     public Blog createBlog(Blog blog) {
-        // Nếu sử dụng lifecycle callback thì createdAt, updatedAt sẽ tự động set
+        // Set blog cho từng image nếu có
+        if (blog.getImages() != null) {
+            blog.getImages().forEach(image -> image.setBlog(blog));
+        }
         return blogRepository.save(blog);
     }
 
-    /**
-     * Cập nhật Blog
-     */
     public Blog updateBlog(Long id, Blog blogDetails) {
         Blog blog = blogRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.BLOG_NOT_EXISTED));
+
         blog.setTitle(blogDetails.getTitle());
         blog.setContent(blogDetails.getContent());
         blog.setAuthor(blogDetails.getAuthor());
-        // Nếu dùng @PreUpdate trong entity, updatedAt sẽ được tự động cập nhật
+
+        // Xử lý images
+        if (blogDetails.getImages() != null) {
+            // Xóa images cũ nếu cần
+            if (blog.getImages() != null) {
+                blog.getImages().clear();
+            }
+            // Thêm images mới và set quan hệ
+            blogDetails.getImages().forEach(image -> image.setBlog(blog));
+            blog.setImages(blogDetails.getImages());
+        }
+
         return blogRepository.save(blog);
     }
 
-    /**
-     * Xoá Blog theo id
-     */
     public void deleteBlog(Long id) {
         blogRepository.deleteById(id);
     }

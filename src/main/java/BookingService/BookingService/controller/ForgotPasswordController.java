@@ -1,6 +1,5 @@
 package BookingService.BookingService.controller;
 
-
 import BookingService.BookingService.dto.request.ChangePassword;
 import BookingService.BookingService.dto.request.MailBody;
 import BookingService.BookingService.entity.ForgotPassword;
@@ -17,6 +16,7 @@ import BookingService.BookingService.repository.ForgotPasswordRepository;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 
 @RestController
@@ -35,12 +35,11 @@ public class ForgotPasswordController {
         this.passwordEncoder = passwordEncoder;
     }
 
-
-    // send mail for email verification
+    // Send mail for email verification
     @PostMapping("/verifyMail/{email}")
     public ResponseEntity<String> verifyEMail(@PathVariable String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Please provide an valid email!")); // check email exists
+                .orElseThrow(() -> new UsernameNotFoundException("Please provide a valid email!")); // Check if email exists
 
         int otp = otpGenerator();
         MailBody mailBody = MailBody.builder()
@@ -49,43 +48,59 @@ public class ForgotPasswordController {
                 .subject("OTP for Forgot Password request")
                 .build();
 
-        ForgotPassword fp = ForgotPassword.builder()
-                .otp(otp)
-                .expirationTime(new Date(System.currentTimeMillis() + 70 * 1000))
-                .user(user)
-                .build();
+        // Kiểm tra xem đã có bản ghi ForgotPassword nào cho user này chưa
+        Optional<ForgotPassword> existingFp = forgotPasswordRepository.findByUser(user);
+        ForgotPassword fp;
+
+        if (existingFp.isPresent()) {
+            // Nếu đã tồn tại, cập nhật OTP và expirationTime
+            fp = existingFp.get();
+            fp.setOtp(otp);
+            fp.setExpirationTime(new Date(System.currentTimeMillis() + 70 * 1000)); // Cập nhật thời gian hết hạn
+        } else {
+            // Nếu chưa tồn tại, tạo mới bản ghi ForgotPassword
+            fp = ForgotPassword.builder()
+                    .otp(otp)
+                    .expirationTime(new Date(System.currentTimeMillis() + 70 * 1000))
+                    .user(user)
+                    .build();
+        }
 
         emailService.sendSimpleMessage(mailBody);
-        forgotPasswordRepository.save(fp);
+        forgotPasswordRepository.save(fp); // Lưu hoặc cập nhật bản ghi
 
         return ResponseEntity.ok("Email sent for verification!");
     }
 
     @PostMapping("/verifyOtp/{otp}/{email}")
     public ResponseEntity<String> verifyOtp(@PathVariable Integer otp, @PathVariable String email) {
-        User user = userRepository.findByEmail(email).orElseThrow(()
-                -> new UsernameNotFoundException("Please provide an valid email!")); // check email exists
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Please provide a valid email!"));
 
-        ForgotPassword fp = forgotPasswordRepository.findByOtpAndUser(otp, user).orElseThrow(() -> new RuntimeException("Invalid OTP for email" + email) );
-        if(fp.getExpirationTime().before(Date.from(Instant.now()))){
+        Optional<ForgotPassword> fpOpt = forgotPasswordRepository.findByOtpAndUser(otp, user);
+        if (!fpOpt.isPresent()) {
+            return new ResponseEntity<>("Invalid OTP for email: " + email, HttpStatus.BAD_REQUEST);
+        }
+
+        ForgotPassword fp = fpOpt.get();
+        if (fp.getExpirationTime().before(Date.from(Instant.now()))) {
             forgotPasswordRepository.deleteById(fp.getFpid());
             return new ResponseEntity<>("OTP has expired!", HttpStatus.EXPECTATION_FAILED);
         }
-        return ResponseEntity.ok("OTP verified !");
+        return ResponseEntity.ok("OTP verified!");
     }
 
     @PostMapping("/changePassword/{email}")
     public ResponseEntity<String> changePasswordHandler(@RequestBody ChangePassword changePassword,
                                                         @PathVariable String email) {
-        if(!Objects.equals(changePassword.password(), changePassword.repeatPassword())){
+        if (!Objects.equals(changePassword.password(), changePassword.repeatPassword())) {
             return new ResponseEntity<>("Please enter the password again!", HttpStatus.EXPECTATION_FAILED);
         }
-        String encodePassword = passwordEncoder.encode(changePassword.password());
-        userRepository.updatePassword(email, encodePassword);
+        String encodedPassword = passwordEncoder.encode(changePassword.password());
+        userRepository.updatePassword(email, encodedPassword);
 
         return ResponseEntity.ok("Password changed successfully!");
     }
-
 
     private Integer otpGenerator() {
         Random random = new Random();

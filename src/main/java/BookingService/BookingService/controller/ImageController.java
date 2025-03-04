@@ -19,11 +19,23 @@ public class ImageController {
 
     private final ImageService imageService;
 
-    // Chỉ ADMIN mới được tạo ảnh
+    // Chỉ ADMIN mới được tạo ảnh cho service
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping
-    public ResponseEntity<ImageResponse> createImage(@Valid @RequestBody ImageRequest request) {
-        ImageResponse response = imageService.createImage(request);
+    @PostMapping("/service/{serviceId}")
+    public ResponseEntity<ImageResponse> createImageForService(
+            @PathVariable Long serviceId,
+            @Valid @RequestBody ImageRequest request) {
+        ImageResponse response = imageService.createImageForService(request, serviceId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // Chỉ ADMIN mới được tạo ảnh cho blog
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/blog/{blogId}")
+    public ResponseEntity<ImageResponse> createImageForBlog(
+            @PathVariable Long blogId,
+            @Valid @RequestBody ImageRequest request) {
+        ImageResponse response = imageService.createImageForBlog(request, blogId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -44,7 +56,9 @@ public class ImageController {
     // Chỉ ADMIN mới được cập nhật ảnh
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<ImageResponse> updateImage(@PathVariable Long id, @Valid @RequestBody ImageRequest request) {
+    public ResponseEntity<ImageResponse> updateImage(
+            @PathVariable Long id,
+            @Valid @RequestBody ImageRequest request) {
         ImageResponse response = imageService.updateImage(id, request);
         return ResponseEntity.ok(response);
     }
@@ -61,6 +75,13 @@ public class ImageController {
     @GetMapping("/service/{serviceId}")
     public ResponseEntity<List<ImageResponse>> getImagesByService(@PathVariable Long serviceId) {
         List<ImageResponse> responses = imageService.getImagesByService(serviceId);
+        return ResponseEntity.ok(responses);
+    }
+
+    // Lấy tất cả ảnh theo blogId (mở cho mọi người)
+    @GetMapping("/blog/{blogId}")
+    public ResponseEntity<List<ImageResponse>> getImagesByBlog(@PathVariable Long blogId) {
+        List<ImageResponse> responses = imageService.getImagesByBlog(blogId);
         return ResponseEntity.ok(responses);
     }
 }

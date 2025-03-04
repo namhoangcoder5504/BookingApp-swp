@@ -1,14 +1,11 @@
 package BookingService.BookingService.entity;
 
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.apache.catalina.Service;
 
 import java.time.LocalDateTime;
-
 
 @Entity
 @Table(name = "images")
@@ -34,6 +31,15 @@ public class Image {
     @ManyToOne
     @JoinColumn(name = "service_id", referencedColumnName = "service_id")
     @JsonBackReference
-    ServiceEntity service;;
-}
+    ServiceEntity service;
 
+    @ManyToOne
+    @JoinColumn(name = "blog_id", referencedColumnName = "blog_id") // Thêm quan hệ với Blog
+    @JsonBackReference
+    Blog blog; // Thêm field blog
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+    }
+}

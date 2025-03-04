@@ -10,12 +10,14 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ImageMapper {
 
-    @Mapping(target = "imageId", ignore = true) // ID is auto-generated
-    @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())") // Set current time
-    @Mapping(target = "service", source = "service") // Explicitly map service parameter
-    @Mapping(target = "url", source = "request.url") // Map url from request
+    @Mapping(target = "imageId", ignore = true)
+    @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")
+    @Mapping(target = "service", source = "service")
+    @Mapping(target = "url", source = "request.url")
+    @Mapping(target = "blog", ignore = true) // Không map blog ở đây vì dùng cho service
     Image toEntity(ImageRequest request, ServiceEntity service);
 
-    @Mapping(target = "serviceId", source = "service.serviceId") // Map service ID from ServiceEntity
+    @Mapping(target = "serviceId", source = "service.serviceId")
+    @Mapping(target = "blogId", source = "blog.blogId") // Map blogId từ Blog
     ImageResponse toResponse(Image image);
 }

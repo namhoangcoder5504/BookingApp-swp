@@ -2,78 +2,97 @@ package BookingService.BookingService.service;
 
 import BookingService.BookingService.dto.request.ImageRequest;
 import BookingService.BookingService.dto.response.ImageResponse;
+import BookingService.BookingService.entity.Blog;
 import BookingService.BookingService.entity.Image;
 import BookingService.BookingService.entity.ServiceEntity;
 import BookingService.BookingService.exception.AppException;
 import BookingService.BookingService.exception.ErrorCode;
 import BookingService.BookingService.mapper.ImageMapper;
+import BookingService.BookingService.repository.BlogRepository;
 import BookingService.BookingService.repository.ImageRepository;
 import BookingService.BookingService.repository.ServiceEntityRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class ImageService {
 
-    private final ImageRepository imageRepository;
-    private final ServiceEntityRepository serviceRepository;
-    private final ImageMapper imageMapper;
+    @Autowired
+    private ImageRepository imageRepository;
 
-    // Tạo mới Image, chỉ ADMIN mới được tạo
-    public ImageResponse createImage(ImageRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated() ||
-                auth.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
+    @Autowired
+    private ServiceEntityRepository serviceRepository;
 
-        ServiceEntity service = serviceRepository.findById(request.getServiceId())
+    @Autowired
+    private BlogRepository blogRepository;
+
+    @Autowired
+    private ImageMapper imageMapper;
+
+    // Tạo ảnh cho service
+    public ImageResponse createImageForService(ImageRequest request, Long serviceId) {
+        ServiceEntity service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new AppException(ErrorCode.SERVICE_NOT_EXISTED));
         Image image = imageMapper.toEntity(request, service);
-        Image savedImage = imageRepository.save(image);
-        return imageMapper.toResponse(savedImage);
+        image.setBlog(null); // Đảm bảo không liên kết với blog
+        return imageMapper.toResponse(imageRepository.save(image));
     }
 
+    // Tạo ảnh cho blog
+    public ImageResponse createImageForBlog(ImageRequest request, Long blogId) {
+        Blog blog = blogRepository.findById(blogId)
+                .orElseThrow(() -> new AppException(ErrorCode.BLOG_NOT_EXISTED));
+        Image image = imageMapper.toEntity(request, null); // Không liên kết với service
+        image.setBlog(blog);
+        return imageMapper.toResponse(imageRepository.save(image));
+    }
+
+    // Lấy tất cả ảnh
     public List<ImageResponse> getAllImages() {
-        return imageRepository.findAll().stream()
+        return imageRepository.findAll()
+                .stream()
                 .map(imageMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
+    // Lấy ảnh theo ID
     public ImageResponse getImageById(Long id) {
         Image image = imageRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.IMAGE_NOT_FOUND));
         return imageMapper.toResponse(image);
     }
 
+    // Cập nhật ảnh
     public ImageResponse updateImage(Long id, ImageRequest request) {
         Image image = imageRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.IMAGE_NOT_FOUND));
-        ServiceEntity service = serviceRepository.findById(request.getServiceId())
-                .orElseThrow(() -> new AppException(ErrorCode.SERVICE_NOT_EXISTED));
         image.setUrl(request.getUrl());
-        image.setService(service);
-        Image updatedImage = imageRepository.save(image);
-        return imageMapper.toResponse(updatedImage);
+        return imageMapper.toResponse(imageRepository.save(image));
     }
 
+    // Xóa ảnh
     public void deleteImage(Long id) {
         Image image = imageRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.IMAGE_NOT_FOUND));
         imageRepository.delete(image);
     }
 
+    // Lấy ảnh theo serviceId
     public List<ImageResponse> getImagesByService(Long serviceId) {
-        ServiceEntity service = serviceRepository.findById(serviceId)
-                .orElseThrow(() -> new AppException(ErrorCode.SERVICE_NOT_EXISTED));
-        List<Image> images = imageRepository.findByService(service);
-        return images.stream()
+        return imageRepository.findByServiceServiceId(serviceId)
+                .stream()
+                .map(imageMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Lấy ảnh theo blogId
+    public List<ImageResponse> getImagesByBlog(Long blogId) {
+        return imageRepository.findByBlogBlogId(blogId)
+                .stream()
                 .map(imageMapper::toResponse)
                 .collect(Collectors.toList());
     }

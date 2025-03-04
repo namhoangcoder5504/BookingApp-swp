@@ -20,7 +20,10 @@ public class QuizController {
 
     private final QuizService quizService;
     private final UserService userService;
-
+    @GetMapping("/questions-with-answers")
+    public List<Map<String, Object>> getQuizQuestionsWithAnswers() {
+        return quizService.getQuizQuestionsWithAnswers();
+    }
     @PostMapping("/submit")
     public Map<String, Object> submitQuiz(@RequestBody Map<Long, Long> selectedAnswers) {
         return quizService.processQuiz(selectedAnswers); // Trả về loại da và danh sách dịch vụ gợi ý

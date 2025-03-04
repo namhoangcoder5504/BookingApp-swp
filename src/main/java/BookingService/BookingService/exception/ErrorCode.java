@@ -40,7 +40,10 @@ public enum ErrorCode {
     PAYMENT_AMOUNT_MISMATCH(1046, "Payment amount does not match booking total price", HttpStatus.BAD_REQUEST),
     QUIZ_QUESTION_NOT_FOUND(1040, "Quiz question not found", HttpStatus.NOT_FOUND),
     DATA_ALREADY_EXISTS(1042, "Data already exists", HttpStatus.BAD_REQUEST),
-    QUIZ_ANSWER_NOT_FOUND(1041, "Quiz answer not found", HttpStatus.NOT_FOUND);
+    QUIZ_ANSWER_NOT_FOUND(1041, "Quiz answer not found", HttpStatus.NOT_FOUND),
+    INVALID_PASSWORD(1047,"invalid password",HttpStatus.BAD_REQUEST),
+    PASSWORD_NOT_MATCH(1048,"Password not match",HttpStatus.BAD_REQUEST)
+    ;
 
     private final int code;
     private final String message;
