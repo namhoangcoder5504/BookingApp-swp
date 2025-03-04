@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy JAR app to Azure Web App - booking-service-app
+name: Build and deploy WAR app to Azure Web App - booking-service-app
 
 on:
   push:
@@ -30,8 +30,8 @@ jobs:
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: booking-service-app
-          path: '${{ github.workspace }}/target/*.jar'
+          name: java-app
+          path: '${{ github.workspace }}/target/*.war'
 
   deploy:
     runs-on: windows-latest
@@ -47,14 +47,14 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: booking-service-app
-      
+          name: java-app
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F3C9B4635C004BD49633D0FAF3DB2B1A }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_1930950F3A0F4309BB014AC828616DA0 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_371D9FE2547A426A9DDA13784601EE52 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D71CB8EF2C364CB8B8BE7DD55C351135 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E8775F3FCA9645B793563AD63566124B }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_3F893A37F4E24243AE1ED068AAC49CFE }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -62,5 +62,4 @@ jobs:
         with:
           app-name: 'booking-service-app'
           slot-name: 'Production'
-          package: '*.jar'
-          
+          package: '*.war'
