@@ -1,6 +1,7 @@
 package BookingService.BookingService.controller;
 
 import BookingService.BookingService.entity.QuizResult;
+import BookingService.BookingService.entity.ServiceEntity;
 import BookingService.BookingService.entity.User;
 import BookingService.BookingService.entity.QuizQuestion;
 import BookingService.BookingService.service.QuizService;
@@ -20,6 +21,11 @@ public class QuizController {
 
     private final QuizService quizService;
     private final UserService userService;
+
+    @GetMapping("/recommended-services")
+    public List<ServiceEntity> getRecommendedServices() {
+        return quizService.getRecommendedServicesFromLatestQuiz();
+    }
     @GetMapping("/questions-with-answers")
     public List<Map<String, Object>> getQuizQuestionsWithAnswers() {
         return quizService.getQuizQuestionsWithAnswers();

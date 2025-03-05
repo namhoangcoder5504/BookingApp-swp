@@ -52,7 +52,9 @@ public class SecurityConfig {
             "/test",
             "/api/services",
             "/api/blogs",
-            "/api/quiz/questions-with-answers"
+            "/api/quiz/questions-with-answers",
+            "/api/users/specialists"
+
 
     };
 

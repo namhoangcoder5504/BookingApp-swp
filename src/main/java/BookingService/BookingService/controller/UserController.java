@@ -134,7 +134,6 @@ public class UserController {
     }
     // Lấy danh sách toàn bộ Specialist
     @GetMapping("/specialists")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     public List<UserResponse> getAllSpecialists() {
         return userService.getUsersByRole(Role.SPECIALIST);
     }

@@ -560,4 +560,27 @@ public class QuizService {
                 })
                 .collect(Collectors.toList());
     }
+
+    public List<ServiceEntity> getRecommendedServicesFromLatestQuiz() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserEmail = authentication.getName();
+        User user = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        // Lấy bài test gần nhất của user
+        List<QuizResult> quizHistory = quizResultRepository.findByUser(user);
+        if (quizHistory.isEmpty()) {
+            throw new AppException(ErrorCode.QUIZ_RESULT_NOT_FOUND);
+        }
+
+        // Sắp xếp theo thời gian tạo để lấy bài test gần nhất
+        QuizResult latestQuiz = quizHistory.stream()
+                .sorted(Comparator.comparing(QuizResult::getCreatedAt).reversed())
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.QUIZ_RESULT_NOT_FOUND));
+
+        // Lấy danh sách dịch vụ từ loại da được phát hiện
+        SkinType detectedSkinType = latestQuiz.getDetectedSkinType();
+        return serviceEntityService.getServicesBySkinType(detectedSkinType);
+    }
 }

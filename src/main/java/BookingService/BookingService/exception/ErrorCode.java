@@ -42,7 +42,8 @@ public enum ErrorCode {
     DATA_ALREADY_EXISTS(1042, "Data already exists", HttpStatus.BAD_REQUEST),
     QUIZ_ANSWER_NOT_FOUND(1041, "Quiz answer not found", HttpStatus.NOT_FOUND),
     INVALID_PASSWORD(1047,"invalid password",HttpStatus.BAD_REQUEST),
-    PASSWORD_NOT_MATCH(1048,"Password not match",HttpStatus.BAD_REQUEST)
+    PASSWORD_NOT_MATCH(1048,"Password not match",HttpStatus.BAD_REQUEST),
+    QUIZ_RESULT_NOT_FOUND(1040, "Quiz question not found", HttpStatus.NOT_FOUND),
     ;
 
     private final int code;
