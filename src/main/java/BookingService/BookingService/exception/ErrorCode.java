@@ -44,6 +44,12 @@ public enum ErrorCode {
     INVALID_PASSWORD(1047,"invalid password",HttpStatus.BAD_REQUEST),
     PASSWORD_NOT_MATCH(1048,"Password not match",HttpStatus.BAD_REQUEST),
     QUIZ_RESULT_NOT_FOUND(1040, "Quiz question not found", HttpStatus.NOT_FOUND),
+    TIME_SLOT_OUTSIDE_WORKING_HOURS(1049,"time slot outside working hours",HttpStatus.NOT_FOUND),
+    BOOKING_DATE_TOO_FAR_IN_FUTURE(1050,"Cannot book more than 7 days from today ",HttpStatus.NOT_FOUND),
+    SPECIALIST_NOT_ACTIVE(1051,"Specialist not active",HttpStatus.NOT_FOUND),
+    NOT_A_SPECIALIST(1052,"Not a Specialist",HttpStatus.NOT_FOUND),
+    INVALID_STATUS(1053,"Invalid Status , Status must be ACTIVE or INACTIVE",HttpStatus.BAD_REQUEST),
+    BOOKING_CANNOT_BE_CANCELLED(1052,"Booking cannot cancle",HttpStatus.BAD_REQUEST)
     ;
 
     private final int code;

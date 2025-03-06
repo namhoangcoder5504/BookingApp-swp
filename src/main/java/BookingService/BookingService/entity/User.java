@@ -38,7 +38,8 @@ public class User {
 
     @OneToOne(mappedBy = "user")
     private ForgotPassword forgotPassword;
-
+    @Column(name = "status")
+    private String status = "ACTIVE";
 
     LocalDateTime createdAt;
     LocalDateTime updatedAt;

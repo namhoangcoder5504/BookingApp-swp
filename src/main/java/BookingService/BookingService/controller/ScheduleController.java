@@ -26,25 +26,6 @@ public class ScheduleController {
     private final ScheduleService scheduleService;
     private final ScheduleMapper scheduleMapper;
 
-    @PostMapping("/bulk")
-    public ResponseEntity<List<ScheduleResponse>> createSchedules(@Valid @RequestBody List<ScheduleRequest> requests) {
-        List<Schedule> schedules = requests.stream()
-                .map(request -> {
-                    User specialist = scheduleService.getSpecialistById(request.getSpecialistId());
-                    Schedule schedule = scheduleMapper.toEntity(request);
-                    schedule.setSpecialist(specialist);
-                    return schedule;
-                })
-                .collect(Collectors.toList());
-
-        List<Schedule> savedSchedules = scheduleService.createSchedules(schedules);
-        List<ScheduleResponse> responses = savedSchedules.stream()
-                .map(scheduleMapper::toResponse)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(responses);
-    }
-
     @GetMapping
     public ResponseEntity<List<ScheduleResponse>> getAllSchedules() {
         List<ScheduleResponse> responseList = scheduleService.getAllSchedules()
@@ -58,18 +39,8 @@ public class ScheduleController {
     public ResponseEntity<ScheduleResponse> getScheduleById(@PathVariable Long id) {
         return scheduleService.getScheduleById(id)
                 .map(schedule -> ResponseEntity.ok(scheduleMapper.toResponse(schedule)))
-                .orElse(ResponseEntity.notFound().build());
+                .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
     }
-
-    @PostMapping
-    public ResponseEntity<ScheduleResponse> createSchedule(@Valid @RequestBody ScheduleRequest request) {
-        User specialist = scheduleService.getSpecialistById(request.getSpecialistId());
-        Schedule scheduleEntity = scheduleMapper.toEntity(request);
-        scheduleEntity.setSpecialist(specialist);
-        Schedule savedSchedule = scheduleService.createSchedule(scheduleEntity);
-        return ResponseEntity.status(HttpStatus.CREATED).body(scheduleMapper.toResponse(savedSchedule));
-    }
-
     @PutMapping("/{id}")
     public ResponseEntity<ScheduleResponse> updateSchedule(
             @PathVariable Long id,
@@ -82,20 +53,13 @@ public class ScheduleController {
                     Schedule updatedSchedule = scheduleService.updateSchedule(existingSchedule, newData);
                     return ResponseEntity.ok(scheduleMapper.toResponse(updatedSchedule));
                 })
-                .orElse(ResponseEntity.notFound().build());
+                .orElseThrow(() -> new AppException(ErrorCode.SCHEDULE_NOT_FOUND));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSchedule(@PathVariable Long id) {
-        try {
-            scheduleService.deleteSchedule(id);
-            return ResponseEntity.noContent().build();
-        } catch (AppException e) {
-            if (e.getErrorCode() == ErrorCode.SCHEDULE_NOT_FOUND) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        scheduleService.deleteSchedule(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/specialist/{specialistId}/date/{date}")
@@ -109,8 +73,30 @@ public class ScheduleController {
         return ResponseEntity.ok(responseList);
     }
 
+    // Xử lý lỗi cụ thể cho AppException
+    @ExceptionHandler(AppException.class)
+    public ResponseEntity<String> handleAppException(AppException ex) {
+        if (ex.getErrorCode() == ErrorCode.SCHEDULE_NOT_FOUND) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Lịch không tồn tại: " + ex.getMessage());
+        } else if (ex.getErrorCode() == ErrorCode.BOOKING_TIME_CONFLICT) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Lịch đã trùng với lịch khác: " + ex.getMessage());
+        } else if (ex.getErrorCode() == ErrorCode.INVALID_TIME_SLOT_FORMAT) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Định dạng khung giờ không hợp lệ: " + ex.getMessage());
+        } else if (ex.getErrorCode() == ErrorCode.SKIN_THERAPIST_NOT_EXISTED) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Chuyên viên không tồn tại: " + ex.getMessage());
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Lỗi hệ thống: " + ex.getMessage());
+    }
+
+    // Xử lý lỗi chung khác
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleException(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đã xảy ra lỗi: " + ex.getMessage());
+    public ResponseEntity<String> handleGenericException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Đã xảy ra lỗi không xác định: " + ex.getMessage());
     }
 }

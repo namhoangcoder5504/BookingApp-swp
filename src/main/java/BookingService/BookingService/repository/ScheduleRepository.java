@@ -11,5 +11,6 @@ import java.util.List;
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     boolean existsBySpecialistUserIdAndDateAndTimeSlot(Long userId, LocalDate date, String timeSlot);
     boolean existsBySpecialistUserIdAndDateAndTimeSlotAndScheduleIdNot(Long userId, LocalDate date, String timeSlot, Long scheduleId);
+    Schedule findBySpecialistUserIdAndDateAndTimeSlot(Long specialistUserId, LocalDate date, String timeSlot);
     List<Schedule> findBySpecialistUserIdAndDate(Long specialistId, LocalDate date); // Thêm mới
 }

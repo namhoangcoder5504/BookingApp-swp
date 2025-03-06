@@ -13,12 +13,12 @@ import java.util.List;
 @Data
 public class BookingRequest {
 
-    @NotNull(message = "Specialist ID cannot be null")
+
     private Long specialistId;
 
     @NotNull(message = "Booking date is required")
     private LocalDate bookingDate;
-    private String timeSlot;
+    private String startTime;
 
     @NotEmpty // hoặc @NotNull
     private List<Long> serviceIds;

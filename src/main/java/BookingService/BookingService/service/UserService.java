@@ -1,5 +1,6 @@
 package BookingService.BookingService.service;
 
+import BookingService.BookingService.dto.request.UpdateSpecialistStatusRequest;
 import BookingService.BookingService.dto.request.UserCreationRequest;
 import BookingService.BookingService.dto.request.UserUpdateRequest;
 import BookingService.BookingService.dto.response.UserResponse;
@@ -37,6 +38,26 @@ public class UserService {
     /**
      * Tạo user mới
      */
+
+    public void updateSpecialistStatus(Long specialistId, UpdateSpecialistStatusRequest request) {
+        User specialist = userRepository.findById(specialistId)
+                .orElseThrow(() -> new AppException(ErrorCode.SKIN_THERAPIST_NOT_EXISTED));
+
+        // Kiểm tra xem user có phải là chuyên viên không
+        if (specialist.getRole() != Role.SPECIALIST) {
+            throw new AppException(ErrorCode.NOT_A_SPECIALIST);
+        }
+
+        // Kiểm tra giá trị status hợp lệ
+        String newStatus = request.getStatus().toUpperCase();
+        if (!newStatus.equals("ACTIVE") && !newStatus.equals("INACTIVE")) {
+            throw new AppException(ErrorCode.INVALID_STATUS);
+        }
+
+        // Cập nhật trạng thái
+        specialist.setStatus(newStatus);
+        userRepository.save(specialist);
+    }
     public User saveUser(User user) {
         // Kiểm tra email trùng
         if (userRepository.existsByEmail(user.getEmail())) {

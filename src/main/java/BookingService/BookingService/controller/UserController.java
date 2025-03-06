@@ -2,6 +2,7 @@ package BookingService.BookingService.controller;
 
 
 import BookingService.BookingService.dto.request.ApiResponse;
+import BookingService.BookingService.dto.request.UpdateSpecialistStatusRequest;
 import BookingService.BookingService.dto.request.UserCreationRequest;
 import BookingService.BookingService.dto.request.UserUpdateRequest;
 import BookingService.BookingService.dto.response.UserResponse;
@@ -18,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -55,6 +57,14 @@ public class UserController {
                 .build();
     }
 
+    @PutMapping("/specialists/{specialistId}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<String> updateSpecialistStatus(
+            @PathVariable Long specialistId,
+            @RequestBody UpdateSpecialistStatusRequest request) {
+        userService.updateSpecialistStatus(specialistId, request);
+        return ResponseEntity.ok("Cập nhật trạng thái chuyên viên thành công: " + request.getStatus());
+    }
     // GET thông tin chi tiết user
     // Nếu không phải ADMIN, user chỉ được truy xuất thông tin của chính mình
     // Hoặc, nếu người gọi là STAFF thì được phép lấy thông tin của specialist
