@@ -12,9 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,41 +26,11 @@ public class ScheduleService {
     private final UserRepository userRepository;
     private final ScheduleMapper scheduleMapper;
 
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+
     public User getSpecialistById(Long specialistId) {
         return userRepository.findById(specialistId)
                 .orElseThrow(() -> new AppException(ErrorCode.SKIN_THERAPIST_NOT_EXISTED));
-    }
-
-    // Tạo nhiều lịch cùng lúc
-    public List<Schedule> createSchedules(List<Schedule> schedules) {
-        // Kiểm tra trùng lặp cho toàn bộ danh sách
-        for (Schedule schedule : schedules) {
-            Long specialistId = schedule.getSpecialist().getUserId();
-            LocalDate date = schedule.getDate();
-            String timeSlot = schedule.getTimeSlot();
-
-            validateTimeSlot(timeSlot);
-            if (scheduleRepository.existsBySpecialistUserIdAndDateAndTimeSlot(specialistId, date, timeSlot)) {
-                throw new AppException(ErrorCode.BOOKING_TIME_CONFLICT);
-            }
-        }
-
-        // Lưu tất cả lịch cùng lúc
-        return scheduleRepository.saveAll(schedules);
-    }
-
-    public Schedule createSchedule(Schedule schedule) {
-        Long specialistId = schedule.getSpecialist().getUserId();
-        LocalDate date = schedule.getDate();
-        String timeSlot = schedule.getTimeSlot();
-
-        validateTimeSlot(timeSlot);
-        boolean isConflict = scheduleRepository.existsBySpecialistUserIdAndDateAndTimeSlot(specialistId, date, timeSlot);
-        if (isConflict) {
-            throw new AppException(ErrorCode.BOOKING_TIME_CONFLICT);
-        }
-
-        return scheduleRepository.save(schedule);
     }
 
     public Schedule updateSchedule(Schedule existingSchedule, Schedule newData) {
@@ -110,13 +81,13 @@ public class ScheduleService {
 
     private void validateTimeSlot(String timeSlot) {
         if (timeSlot == null || !timeSlot.matches("\\d{2}:\\d{2}-\\d{2}:\\d{2}")) {
-            throw new AppException(ErrorCode.BOOKING_TIME_CONFLICT);
+            throw new AppException(ErrorCode.INVALID_TIME_SLOT_FORMAT); // Đổi sang mã lỗi phù hợp hơn
         }
         String[] times = timeSlot.split("-");
-        String startTime = times[0];
-        String endTime = times[1];
-        if (startTime.compareTo(endTime) >= 0) {
-            throw new AppException(ErrorCode.BOOKING_TIME_CONFLICT);
+        LocalTime startTime = LocalTime.parse(times[0], TIME_FORMATTER);
+        LocalTime endTime = LocalTime.parse(times[1], TIME_FORMATTER);
+        if (startTime.isAfter(endTime) || startTime.equals(endTime)) {
+            throw new AppException(ErrorCode.INVALID_TIME_SLOT_FORMAT); // Đổi sang mã lỗi phù hợp hơn
         }
     }
 }
