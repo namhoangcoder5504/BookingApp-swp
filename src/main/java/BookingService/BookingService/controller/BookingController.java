@@ -65,7 +65,7 @@ public class BookingController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{id}/checkin")
+   @PostMapping("/{id}/checkin")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<BookingResponse> checkInBooking(@PathVariable Long bookingId) {
         BookingResponse response = bookingService.checkInBooking(bookingId);
@@ -78,7 +78,6 @@ public class BookingController {
         BookingResponse response = bookingService.checkOutBooking(bookingId);
         return ResponseEntity.ok(response);
     }
-
     @PutMapping("/{id}")
     public ResponseEntity<BookingResponse> updateBooking(
             @PathVariable Long id,
