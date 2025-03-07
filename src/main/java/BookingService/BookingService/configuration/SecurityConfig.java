@@ -53,7 +53,8 @@ public class SecurityConfig {
             "/api/services",
             "/api/blogs",
             "/api/quiz/questions-with-answers",
-            "/api/users/specialists"
+            "/api/users/specialists",
+            "api/users//specialists/active"
 
 
     };
