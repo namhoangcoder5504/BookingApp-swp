@@ -116,6 +116,7 @@ public class BookingService {
         Booking booking = bookingMapper.toEntity(request);
         bookingMapper.setUserEntities(booking, customer, specialist);
 
+        booking.setServices(services); // Gán danh sách dịch vụ
         booking.setTotalPrice(totalPrice);
         booking.setTimeSlot(timeSlot);
         booking.setStatus(BookingStatus.PENDING);
@@ -132,16 +133,13 @@ public class BookingService {
         String htmlBody = buildConfirmationEmail(customer.getName(), specialist.getName(), savedBooking.getBookingDate(), timeSlot, totalPrice);
         emailService.sendEmail(customer.getEmail(), subject, htmlBody);
 
-
         notificationService.createWebNotification(customer,
                 "Bạn đã đặt lịch thành công vào ngày " + savedBooking.getBookingDate() +
                         ", khung giờ " + savedBooking.getTimeSlot() + " với chuyên viên " + specialist.getName());
-
-        // Thông báo email cho chuyên viên
         notificationService.notifySpecialistNewBooking(savedBooking);
+
         return bookingMapper.toResponse(savedBooking);
     }
-
     public List<BookingResponse> getAllBookings() {
         return bookingRepository.findAll().stream()
                 .map(bookingMapper::toResponse)
@@ -220,6 +218,7 @@ public class BookingService {
         }
 
         bookingMapper.setUserEntities(existingBooking, customer, specialist);
+        existingBooking.setServices(services); // Cập nhật danh sách dịch vụ
         existingBooking.setBookingDate(request.getBookingDate());
         existingBooking.setTimeSlot(timeSlot);
         existingBooking.setUpdatedAt(LocalDateTime.now());

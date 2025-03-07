@@ -5,12 +5,14 @@ import BookingService.BookingService.dto.request.ApiResponse;
 import BookingService.BookingService.dto.request.UpdateSpecialistStatusRequest;
 import BookingService.BookingService.dto.request.UserCreationRequest;
 import BookingService.BookingService.dto.request.UserUpdateRequest;
+import BookingService.BookingService.dto.response.SpecialistResponse;
 import BookingService.BookingService.dto.response.UserResponse;
 import BookingService.BookingService.entity.User;
 import BookingService.BookingService.enums.Role;
 import BookingService.BookingService.exception.AppException;
 import BookingService.BookingService.exception.ErrorCode;
 
+import BookingService.BookingService.mapper.SpecialistMapper;
 import BookingService.BookingService.mapper.UserMapper;
 import BookingService.BookingService.repository.UserRepository;
 import BookingService.BookingService.service.UserService;
@@ -26,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -39,6 +41,7 @@ public class UserController {
     UserService userService;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final SpecialistMapper specialistMapper;
     // Tạo user - mở public (không cần token)
 
     @PostMapping
@@ -65,9 +68,7 @@ public class UserController {
         userService.updateSpecialistStatus(specialistId, request);
         return ResponseEntity.ok("Cập nhật trạng thái chuyên viên thành công: " + request.getStatus());
     }
-    // GET thông tin chi tiết user
-    // Nếu không phải ADMIN, user chỉ được truy xuất thông tin của chính mình
-    // Hoặc, nếu người gọi là STAFF thì được phép lấy thông tin của specialist
+
     @GetMapping("/{userId}")
     public UserResponse getUser(@PathVariable("userId") Long userId) {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -76,8 +77,7 @@ public class UserController {
         boolean isStaff = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"));
         UserResponse response = userService.getUser(userId);
-        // Nếu không phải ADMIN và không phải chính mình thì kiểm tra thêm:
-        // Cho phép nếu người gọi là STAFF và user cần lấy có role SPECIALIST
+
         if (!isAdmin && !response.getEmail().equals(currentUserEmail)) {
             if (!(isStaff && response.getRole() == Role.SPECIALIST)) {
                 throw new AppException(ErrorCode.UNAUTHENTICATED);
@@ -144,8 +144,30 @@ public class UserController {
     }
     // Lấy danh sách toàn bộ Specialist
     @GetMapping("/specialists")
-    public List<UserResponse> getAllSpecialists() {
-        return userService.getUsersByRole(Role.SPECIALIST);
+    public List<SpecialistResponse> getAllSpecialists() {
+        List<User> specialists = userRepository.findByRole(Role.SPECIALIST);
+        return specialists.stream()
+                .map(specialistMapper::toSpecialistResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Thêm endpoint hiển thị một chuyên viên theo ID
+    @GetMapping("/specialists/{specialistId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'CUSTOMER')")
+    public SpecialistResponse getSpecialistById(@PathVariable Long specialistId) {
+        User specialist = userRepository.findById(specialistId)
+                .filter(user -> user.getRole() == Role.SPECIALIST)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        return specialistMapper.toSpecialistResponse(specialist);
+    }
+
+    @GetMapping("/specialists/active")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'CUSTOMER')")
+    public List<SpecialistResponse> getActiveSpecialists() {
+        List<User> activeSpecialists = userRepository.findByRoleAndStatus(Role.SPECIALIST, "ACTIVE");
+        return activeSpecialists.stream()
+                .map(specialistMapper::toSpecialistResponse)
+                .collect(Collectors.toList());
     }
 
 }
