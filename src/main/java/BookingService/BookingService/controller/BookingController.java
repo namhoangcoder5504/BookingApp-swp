@@ -65,14 +65,14 @@ public class BookingController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{bookingId}/check-in")
+    @PostMapping("/{id}/checkin")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<BookingResponse> checkInBooking(@PathVariable Long bookingId) {
         BookingResponse response = bookingService.checkInBooking(bookingId);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{bookingId}/check-out")
+    @PostMapping("/{id}/checkout")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<BookingResponse> checkOutBooking(@PathVariable Long bookingId) {
         BookingResponse response = bookingService.checkOutBooking(bookingId);
