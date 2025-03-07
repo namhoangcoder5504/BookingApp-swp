@@ -305,11 +305,21 @@ public class BookingService {
     }
 
     public BookingResponse checkInBooking(Long bookingId) {
+        // Kiểm tra quyền người dùng
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserEmail = authentication.getName();
+        User currentUser = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+        if (!isHighRole(currentUser.getRole())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_EXISTED));
 
         if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new AppException(ErrorCode.BOOKING_NOT_EXISTED);
+            throw new AppException(ErrorCode.BOOKING_NOT_CONFIRMED); // Cải thiện thông báo lỗi
         }
 
         booking.setCheckInTime(LocalDateTime.now());
@@ -320,15 +330,26 @@ public class BookingService {
         String subject = "Xác nhận Check-in tại Beautya";
         String htmlBody = buildCheckInEmail(booking.getCustomer().getName(), booking.getSpecialist().getName(), booking.getCheckInTime());
         emailService.sendEmail(booking.getCustomer().getEmail(), subject, htmlBody);
+
         return bookingMapper.toResponse(booking);
     }
 
     public BookingResponse checkOutBooking(Long bookingId) {
+        // Kiểm tra quyền người dùng
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserEmail = authentication.getName();
+        User currentUser = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+        if (!isHighRole(currentUser.getRole())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_EXISTED));
 
         if (booking.getCheckInTime() == null) {
-            throw new AppException(ErrorCode.BOOKING_NOT_EXISTED);
+            throw new AppException(ErrorCode.BOOKING_NOT_CHECKED_IN); // Cải thiện thông báo lỗi
         }
 
         Payment payment = booking.getPayment();
