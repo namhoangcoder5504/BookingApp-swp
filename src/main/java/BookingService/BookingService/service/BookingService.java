@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class BookingService {
 
-    // Hằng số và biến toàn cục
+
     private static final int MAX_SERVICES_PER_BOOKING = 3;
     private static final long MIN_CANCEL_HOURS = 24;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
@@ -42,7 +42,7 @@ public class BookingService {
     private static final LocalTime CLOSING_TIME = LocalTime.of(20, 0); // 8:00 PM
     private static final int MAX_BOOKING_DAYS_IN_ADVANCE = 7; // Giới hạn 7 ngày
 
-    // Dependencies
+
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
