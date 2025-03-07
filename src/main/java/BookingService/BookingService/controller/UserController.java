@@ -162,7 +162,7 @@ public class UserController {
     }
 
     @GetMapping("/specialists/active")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'CUSTOMER')")
+
     public List<SpecialistResponse> getActiveSpecialists() {
         List<User> activeSpecialists = userRepository.findByRoleAndStatus(Role.SPECIALIST, "ACTIVE");
         return activeSpecialists.stream()
