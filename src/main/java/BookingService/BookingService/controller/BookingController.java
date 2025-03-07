@@ -65,20 +65,19 @@ public class BookingController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{id}/checkin")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
-    public ResponseEntity<BookingResponse> checkIn(@PathVariable Long id) {
-        BookingResponse response = bookingService.checkInBooking(id);
+   @PostMapping("/{id}/checkin")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<BookingResponse> checkInBooking(@PathVariable Long bookingId) {
+        BookingResponse response = bookingService.checkInBooking(bookingId);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{id}/checkout")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
-    public ResponseEntity<BookingResponse> checkOut(@PathVariable Long id) {
-        BookingResponse response = bookingService.checkOutBooking(id);
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<BookingResponse> checkOutBooking(@PathVariable Long bookingId) {
+        BookingResponse response = bookingService.checkOutBooking(bookingId);
         return ResponseEntity.ok(response);
     }
-
     @PutMapping("/{id}")
     public ResponseEntity<BookingResponse> updateBooking(
             @PathVariable Long id,
