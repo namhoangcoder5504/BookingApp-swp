@@ -4,7 +4,10 @@ import BookingService.BookingService.configuration.VnPayConfiguration;
 import BookingService.BookingService.dto.request.ApiResponse;
 import BookingService.BookingService.entity.Booking;
 import BookingService.BookingService.entity.Payment;
+import BookingService.BookingService.enums.BookingStatus;
 import BookingService.BookingService.enums.PaymentStatus;
+import BookingService.BookingService.exception.AppException;
+import BookingService.BookingService.exception.ErrorCode;
 import BookingService.BookingService.repository.BookingRepository;
 import BookingService.BookingService.repository.PaymentRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,7 +38,21 @@ public class VNPayServiceImpl implements VNPayService {
     @Transactional
     @PreAuthorize("hasRole('USER')")
     public String createPayment(int total, String orderInfo, String urlReturn) {
-        // Code hiện tại của bạn giữ nguyên
+        // [NEW] Extract bookingId and check booking status
+        Long bookingId = extractBookingIdFromOrderInfo(orderInfo);
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_EXISTED));
+
+        // [NEW] Check if booking status is IN_PROGRESS
+        if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
+            throw new AppException(ErrorCode.BOOKING_NOT_CHECKED_IN);
+        }
+
+        // [NEW] Check if already paid
+        if (booking.getPaymentStatus() == PaymentStatus.SUCCESS) {
+            throw new AppException(ErrorCode.PAYMENT_NOT_COMPLETED); // Using existing error code
+        }
+
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String vnp_TxnRef = VnPayConfiguration.getRandomNumber(8);
@@ -49,7 +66,6 @@ public class VNPayServiceImpl implements VNPayService {
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
         vnp_Params.put("vnp_Amount", String.valueOf(total * 100));
         vnp_Params.put("vnp_CurrCode", "VND");
-
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
         vnp_Params.put("vnp_OrderInfo", orderInfo);
         vnp_Params.put("vnp_OrderType", orderType);
@@ -98,8 +114,7 @@ public class VNPayServiceImpl implements VNPayService {
         String queryUrl = query.toString();
         String vnp_SecureHash = VnPayConfiguration.hmacSHA512(VnPayConfiguration.vnp_HashSecret, hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
-        String paymentUrl = VnPayConfiguration.vnp_PayUrl + "?" + queryUrl;
-        return paymentUrl;
+        return VnPayConfiguration.vnp_PayUrl + "?" + queryUrl;
     }
 
     @Override
@@ -144,33 +159,30 @@ public class VNPayServiceImpl implements VNPayService {
         int paymentStatus = orderReturn(request);
         String orderInfo = request.getParameter("vnp_OrderInfo");
         String transactionId = request.getParameter("vnp_TransactionNo");
-        BigDecimal amount = new BigDecimal(request.getParameter("vnp_Amount")).divide(new BigDecimal(100)); // Chia cho 100 vì VNPay nhân 100
+        BigDecimal amount = new BigDecimal(request.getParameter("vnp_Amount")).divide(new BigDecimal(100));
 
-        // Giả sử orderInfo chứa bookingId
         Long bookingId = extractBookingIdFromOrderInfo(orderInfo);
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        // Kiểm tra xem Payment với transactionId đã tồn tại chưa
+        // [NEW] Check if payment already successful
         Optional<Payment> existingPaymentByTransaction = paymentRepository.findByTransactionId(transactionId);
-        if (existingPaymentByTransaction.isPresent()) {
+        if (existingPaymentByTransaction.isPresent() && existingPaymentByTransaction.get().getStatus() == PaymentStatus.SUCCESS) {
             return ApiResponse.<String>builder()
                     .message("Payment Already Processed")
-                    .result("Booking ID: " + bookingId + " payment already processed with transaction ID: " + transactionId)
+                    .result("Booking ID: " + bookingId + " has already been paid with transaction ID: " + transactionId)
                     .build();
         }
 
-        // Kiểm tra xem Payment với bookingId đã tồn tại chưa (đảm bảo chỉ một Payment cho mỗi Booking)
         Optional<Payment> existingPaymentByBooking = paymentRepository.findByBookingId(bookingId);
-        if (existingPaymentByBooking.isPresent()) {
+        if (existingPaymentByBooking.isPresent() && existingPaymentByBooking.get().getStatus() == PaymentStatus.SUCCESS) {
             return ApiResponse.<String>builder()
                     .message("Payment Already Processed")
-                    .result("Booking ID: " + bookingId + " already has a payment record")
+                    .result("Booking ID: " + bookingId + " has already been paid")
                     .build();
         }
 
         if (paymentStatus == 1) {
-            // Thanh toán thành công
             Payment payment = Payment.builder()
                     .booking(booking)
                     .amount(amount)
@@ -182,7 +194,6 @@ public class VNPayServiceImpl implements VNPayService {
 
             paymentRepository.save(payment);
 
-            // Cập nhật trạng thái thanh toán của Booking
             booking.setPaymentStatus(PaymentStatus.SUCCESS);
             booking.setPayment(payment);
             bookingRepository.save(booking);
@@ -192,7 +203,6 @@ public class VNPayServiceImpl implements VNPayService {
                     .result("Booking ID: " + bookingId + " paid successfully")
                     .build();
         } else if (paymentStatus == 0) {
-            // Thanh toán thất bại
             Payment payment = Payment.builder()
                     .booking(booking)
                     .amount(amount)
@@ -219,9 +229,8 @@ public class VNPayServiceImpl implements VNPayService {
                     .build();
         }
     }
-    // Phương thức hỗ trợ để trích xuất bookingId từ orderInfo
+
     private Long extractBookingIdFromOrderInfo(String orderInfo) {
-        // Giả sử orderInfo có định dạng như "Booking-123" hoặc cần điều chỉnh theo định dạng thực tế
         try {
             String[] parts = orderInfo.split("-");
             return Long.parseLong(parts[1]);

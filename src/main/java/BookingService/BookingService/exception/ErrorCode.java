@@ -24,7 +24,6 @@ public enum ErrorCode {
     WISHLIST_NOT_FOUND(1030, "Wishlist is not found", HttpStatus.NOT_FOUND),
     IMAGE_NOT_FOUND(1032, "Image is not found", HttpStatus.NOT_FOUND),
     WISHLIST_NOT_ALLOWED(1031, "Wishlist is not allowed", HttpStatus.UNAUTHORIZED),
-
     BLOG_NOT_EXISTED(1026, "Blog not existed", HttpStatus.NOT_FOUND),
     NAME_INVALID(1007, "Name must not be blank", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(1008, "You do not have permission", HttpStatus.FORBIDDEN),
@@ -36,14 +35,15 @@ public enum ErrorCode {
     BOOKING_DURATION_EXCEEDS_TIME_SLOT(1042, "Total service duration exceeds time slot", HttpStatus.BAD_REQUEST),
     BOOKING_CANCEL_TIME_EXPIRED(1043, "Cannot cancel booking less than 24 hours before start time", HttpStatus.BAD_REQUEST),
     PAYMENT_NOT_FOUND(1044, "Payment not found for this booking", HttpStatus.NOT_FOUND),
-    PAYMENT_NOT_COMPLETED(1045, "Payment has not been completed", HttpStatus.BAD_REQUEST),
+    PAYMENT_NOT_COMPLETED(1045, "Payment has been completed", HttpStatus.BAD_REQUEST),
     PAYMENT_AMOUNT_MISMATCH(1046, "Payment amount does not match booking total price", HttpStatus.BAD_REQUEST),
     QUIZ_QUESTION_NOT_FOUND(1040, "Quiz question not found", HttpStatus.NOT_FOUND),
     DATA_ALREADY_EXISTS(1042, "Data already exists", HttpStatus.BAD_REQUEST),
     QUIZ_ANSWER_NOT_FOUND(1041, "Quiz answer not found", HttpStatus.NOT_FOUND),
-    INVALID_PASSWORD(1047,"invalid password",HttpStatus.BAD_REQUEST),
-    PASSWORD_NOT_MATCH(1048,"Password not match",HttpStatus.BAD_REQUEST),
+    INVALID_PASSWORD(1047, "invalid password", HttpStatus.BAD_REQUEST),
+    PASSWORD_NOT_MATCH(1048, "Password not match", HttpStatus.BAD_REQUEST),
     QUIZ_RESULT_NOT_FOUND(1040, "Quiz question not found", HttpStatus.NOT_FOUND),
+
     TIME_SLOT_OUTSIDE_WORKING_HOURS(1049,"time slot outside working hours",HttpStatus.NOT_FOUND),
     BOOKING_DATE_TOO_FAR_IN_FUTURE(1050,"Cannot book more than 7 days from today ",HttpStatus.NOT_FOUND),
     SPECIALIST_NOT_ACTIVE(1051,"Specialist not active",HttpStatus.NOT_FOUND),
@@ -52,8 +52,10 @@ public enum ErrorCode {
     BOOKING_CANNOT_BE_CANCELLED(1052,"Booking cannot cancle",HttpStatus.BAD_REQUEST),
     BOOKING_NOT_CHECKED_IN(1054,"Booking must be checkin",HttpStatus.NOT_FOUND),
     BOOKING_NOT_CONFIRMED(1055,"Booking must be CONFIRM",HttpStatus.NOT_FOUND),
-    INVALID_DATE_RANGE(1056,"invalid date range",HttpStatus.NOT_FOUND)
+    INVALID_DATE_RANGE(1057,"invalid date range",HttpStatus.NOT_FOUND)
+       BOOKING_NOT_CHECKED_IN_BEFORE_PAYMENT(1056, "Booking must be checked in before payment", HttpStatus.BAD_REQUEST);
     ;
+
 
     private final int code;
     private final String message;
