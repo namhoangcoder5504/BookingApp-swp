@@ -16,6 +16,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -104,5 +106,43 @@ public class BookingController {
     public ResponseEntity<Void> markNotificationAsRead(@PathVariable Long id) {
         notificationService.markAsRead(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/revenue/daily")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<BigDecimal> getDailyRevenue(
+            @RequestParam(required = false) String date) { // Tham số dạng "yyyy-MM-dd"
+        LocalDate localDate = (date != null) ? LocalDate.parse(date) : LocalDate.now();
+        BigDecimal revenue = bookingService.getDailyRevenue(localDate);
+        return ResponseEntity.ok(revenue);
+    }
+
+    @GetMapping("/revenue/weekly")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<BigDecimal> getWeeklyRevenue(
+            @RequestParam(required = false) String dateInWeek) { // Tham số dạng "yyyy-MM-dd"
+        LocalDate localDate = (dateInWeek != null) ? LocalDate.parse(dateInWeek) : LocalDate.now();
+        BigDecimal revenue = bookingService.getWeeklyRevenue(localDate);
+        return ResponseEntity.ok(revenue);
+    }
+
+    @GetMapping("/revenue/monthly")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<BigDecimal> getMonthlyRevenue(
+            @RequestParam int year,
+            @RequestParam int month) {
+        BigDecimal revenue = bookingService.getMonthlyRevenue(year, month);
+        return ResponseEntity.ok(revenue);
+    }
+
+    @GetMapping("/revenue/range")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<BigDecimal> getRevenueInRange(
+            @RequestParam String startDate, // Tham số dạng "yyyy-MM-dd"
+            @RequestParam String endDate) { // Tham số dạng "yyyy-MM-dd"
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
+        BigDecimal revenue = bookingService.getRevenueInRange(start, end);
+        return ResponseEntity.ok(revenue);
     }
 }

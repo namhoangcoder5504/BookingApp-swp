@@ -162,7 +162,6 @@ public class UserController {
     }
 
     @GetMapping("/specialists/active")
-
     public List<SpecialistResponse> getActiveSpecialists() {
         List<User> activeSpecialists = userRepository.findByRoleAndStatus(Role.SPECIALIST, "ACTIVE");
         return activeSpecialists.stream()

@@ -161,24 +161,27 @@ public class UserService {
         User user = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        if (request.getCurrentPassword() == null || !passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new AppException(ErrorCode.INVALID_PASSWORD);
-        }
-
-        userMapper.updateUser(user, request); // Gọi trước
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
+
+            if (request.getCurrentPassword() == null || !passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                throw new AppException(ErrorCode.INVALID_PASSWORD);
+            }
+
             if (!request.getPassword().equals(request.getConfirmPassword())) {
                 throw new AppException(ErrorCode.PASSWORD_NOT_MATCH);
             }
-            user.setPassword(passwordEncoder.encode(request.getPassword())); // Set sau
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
+
+
+        userMapper.updateUser(user, request);
+
 
         user.setUpdatedAt(LocalDateTime.now());
         User savedUser = userRepository.save(user);
         return userMapper.toUserResponse(savedUser);
     }
-
     /**
      * Xoá user
      */
