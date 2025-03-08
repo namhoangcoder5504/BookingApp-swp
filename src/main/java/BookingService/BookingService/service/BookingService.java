@@ -20,10 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -464,7 +461,51 @@ public class BookingService {
         return userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
     }
+    public BigDecimal getDailyRevenue(LocalDate date) {
+        return bookingRepository.sumTotalPriceByBookingDateAndStatus(
+                date != null ? date : LocalDate.now(), // Nếu không truyền ngày, dùng ngày hiện tại
+                BookingStatus.COMPLETED
+        );
+    }
+    public BigDecimal getWeeklyRevenue(LocalDate dateInWeek) {
+        LocalDate startOfWeek = (dateInWeek != null ? dateInWeek : LocalDate.now())
+                .with(DayOfWeek.MONDAY); // Ngày đầu tuần (thứ Hai)
+        LocalDate endOfWeek = startOfWeek.plusDays(6); // Ngày cuối tuần (Chủ nhật)
 
+        return bookingRepository.sumTotalPriceByBookingDateBetweenAndStatus(
+                startOfWeek,
+                endOfWeek,
+                BookingStatus.COMPLETED
+        );
+    }
+
+    // Tính tổng doanh thu trong tháng
+    public BigDecimal getMonthlyRevenue(int year, int month) {
+        LocalDate startOfMonth = LocalDate.of(year, month, 1); // Ngày đầu tháng
+        LocalDate endOfMonth = startOfMonth.withDayOfMonth(startOfMonth.lengthOfMonth()); // Ngày cuối tháng
+
+        return bookingRepository.sumTotalPriceByBookingDateBetweenAndStatus(
+                startOfMonth,
+                endOfMonth,
+                BookingStatus.COMPLETED
+        );
+    }
+
+    // Tính tổng doanh thu trong khoảng thời gian tùy chỉnh
+    public BigDecimal getRevenueInRange(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
+        }
+        if (startDate.isAfter(endDate)) {
+            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
+        }
+
+        return bookingRepository.sumTotalPriceByBookingDateBetweenAndStatus(
+                startDate,
+                endDate,
+                BookingStatus.COMPLETED
+        );
+    }
     // Phương thức xây dựng email
     private String buildConfirmationEmail(String customerName, String specialistName, LocalDate bookingDate, String timeSlot, BigDecimal totalPrice) {
         return "<!DOCTYPE html>" +

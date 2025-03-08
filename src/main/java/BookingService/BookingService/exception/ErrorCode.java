@@ -51,7 +51,8 @@ public enum ErrorCode {
     INVALID_STATUS(1053,"Invalid Status , Status must be ACTIVE or INACTIVE",HttpStatus.BAD_REQUEST),
     BOOKING_CANNOT_BE_CANCELLED(1052,"Booking cannot cancle",HttpStatus.BAD_REQUEST),
     BOOKING_NOT_CHECKED_IN(1054,"Booking must be checkin",HttpStatus.NOT_FOUND),
-    BOOKING_NOT_CONFIRMED(1055,"Booking must be CONFIRM",HttpStatus.NOT_FOUND)
+    BOOKING_NOT_CONFIRMED(1055,"Booking must be CONFIRM",HttpStatus.NOT_FOUND),
+    INVALID_DATE_RANGE(1056,"invalid date range",HttpStatus.NOT_FOUND)
     ;
 
     private final int code;
