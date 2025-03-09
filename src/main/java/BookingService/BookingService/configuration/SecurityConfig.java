@@ -55,6 +55,7 @@ public class SecurityConfig {
             "/api/quiz/questions-with-answers",
             "/api/users/specialists",
             "/api/users/specialists/active",
+            "/api/blogs/{id}"
 
 
     };
