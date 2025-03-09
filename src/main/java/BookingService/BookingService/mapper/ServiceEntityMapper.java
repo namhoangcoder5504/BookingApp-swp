@@ -7,7 +7,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring",
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
+        uses = {ImageMapper.class}) // Thêm ImageMapper vào uses
 public interface ServiceEntityMapper {
 
     @Mapping(target = "serviceId", ignore = true) // ID is auto-generated
@@ -16,5 +18,6 @@ public interface ServiceEntityMapper {
     @Mapping(target = "images", ignore = true) // Managed separately
     ServiceEntity toEntity(ServiceEntityRequest request);
 
+    @Mapping(source = "images", target = "images") // ImageMapper sẽ xử lý List<Image> -> List<ImageResponse>
     ServiceEntityResponse toResponse(ServiceEntity entity);
 }

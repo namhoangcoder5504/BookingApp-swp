@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -16,5 +17,6 @@ public class ServiceEntityResponse {
     private Integer duration;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private Set<SkinType> recommendedSkinTypes; // Thêm trường này
+    private Set<SkinType> recommendedSkinTypes;
+    private List<ImageResponse> images;
 }

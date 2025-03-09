@@ -25,7 +25,6 @@ public class BlogService {
     }
 
     public Blog createBlog(Blog blog) {
-        // Set blog cho từng image nếu có
         if (blog.getImages() != null) {
             blog.getImages().forEach(image -> image.setBlog(blog));
         }
@@ -40,13 +39,10 @@ public class BlogService {
         blog.setContent(blogDetails.getContent());
         blog.setAuthor(blogDetails.getAuthor());
 
-        // Xử lý images
         if (blogDetails.getImages() != null) {
-            // Xóa images cũ nếu cần
             if (blog.getImages() != null) {
                 blog.getImages().clear();
             }
-            // Thêm images mới và set quan hệ
             blogDetails.getImages().forEach(image -> image.setBlog(blog));
             blog.setImages(blogDetails.getImages());
         }
