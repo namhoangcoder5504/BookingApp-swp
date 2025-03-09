@@ -1,6 +1,6 @@
 version: "3"
 agent:
-  authtoken: 2tqHPEDvF2c7LbZEWIrq3dswt5f_4WEFst1Mh2RRg6wZ1sJBj
+  authtoken: 2u3hhsSQX76PbLA7ufEpkYLDjTg_88hnwJp5rGRQgvQDLS1Jx
 tunnels:
   myapp:
     proto: http
