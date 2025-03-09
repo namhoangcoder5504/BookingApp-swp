@@ -1,14 +1,17 @@
 package BookingService.BookingService.service;
 
+import BookingService.BookingService.dto.response.NotificationResponse;
 import BookingService.BookingService.entity.Booking;
 import BookingService.BookingService.entity.Notification;
 import BookingService.BookingService.entity.User;
+import BookingService.BookingService.mapper.NotificationMapper;
 import BookingService.BookingService.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +19,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final EmailService emailService;
+    private final NotificationMapper notificationMapper; // Tiêm NotificationMapper
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -27,9 +31,12 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
-    // Lấy thông báo chưa đọc cho user
-    public List<Notification> getUnreadNotifications(User user) {
-        return notificationRepository.findByUserAndIsReadFalse(user);
+    // Lấy thông báo chưa đọc cho user (trả về NotificationResponse)
+    public List<NotificationResponse> getUnreadNotificationResponses(User user) {
+        List<Notification> notifications = notificationRepository.findByUserAndIsReadFalse(user);
+        return notifications.stream()
+                .map(notificationMapper::toNotificationResponse) // Sử dụng MapStruct
+                .collect(Collectors.toList());
     }
 
     // Đánh dấu thông báo đã đọc

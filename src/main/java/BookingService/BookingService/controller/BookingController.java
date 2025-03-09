@@ -93,20 +93,6 @@ public class BookingController {
         bookingService.deleteBooking(id);
         return ResponseEntity.noContent().build();
     }
-    @GetMapping("/notifications")
-    @PreAuthorize("hasAnyRole('CUSTOMER','ADMIN','STAFF','SPECIALIST')")
-    public ResponseEntity<List<Notification>> getUnreadNotifications() {
-        User currentUser = bookingService.getCurrentUser();
-        List<Notification> notifications = notificationService.getUnreadNotifications(currentUser);
-        return ResponseEntity.ok(notifications);
-    }
-
-    @PostMapping("/notifications/{id}/read")
-    @PreAuthorize("hasAnyRole('CUSTOMER','ADMIN','STAFF','SPECIALIST')")
-    public ResponseEntity<Void> markNotificationAsRead(@PathVariable Long id) {
-        notificationService.markAsRead(id);
-        return ResponseEntity.noContent().build();
-    }
 
     @GetMapping("/revenue/daily")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
