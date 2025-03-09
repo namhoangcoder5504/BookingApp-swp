@@ -11,6 +11,7 @@ import BookingService.BookingService.exception.ErrorCode;
 import BookingService.BookingService.repository.BookingRepository;
 import BookingService.BookingService.repository.PaymentRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -18,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
@@ -34,6 +36,9 @@ public class VNPayServiceImpl implements VNPayService {
     BookingRepository bookingRepository;
     PaymentRepository paymentRepository;
 
+    // URL thành công mặc định, có thể thay đổi
+    private static final String DEFAULT_SUCCESS_REDIRECT_URL = "https://www.youtube.com/";
+
     @Override
     @Transactional
     @PreAuthorize("hasRole('USER')")
@@ -48,9 +53,16 @@ public class VNPayServiceImpl implements VNPayService {
             throw new AppException(ErrorCode.BOOKING_NOT_CHECKED_IN);
         }
 
-        // [NEW] Check if already paid
-        if (booking.getPaymentStatus() == PaymentStatus.SUCCESS) {
-            throw new AppException(ErrorCode.PAYMENT_NOT_COMPLETED); // Using existing error code
+        // [NEW] Kiểm tra tổng tiền truyền vào khớp với totalPrice của booking
+        if (total != booking.getTotalPrice().intValue()) {
+            throw new AppException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
+        }
+
+        Payment existingPayment = paymentRepository.findByBookingId(bookingId)
+                .orElse(null);
+
+        if (existingPayment != null && PaymentStatus.SUCCESS.equals(existingPayment.getStatus())) {
+            throw new AppException(ErrorCode.PAYMENT_NOT_COMPLETED); // Đã thanh toán thành công, không cho tạo mới
         }
 
         String vnp_Version = "2.1.0";
@@ -64,7 +76,7 @@ public class VNPayServiceImpl implements VNPayService {
         vnp_Params.put("vnp_Version", vnp_Version);
         vnp_Params.put("vnp_Command", vnp_Command);
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-        vnp_Params.put("vnp_Amount", String.valueOf(total * 100));
+        vnp_Params.put("vnp_Amount", String.valueOf(total * 100)); // VNPay yêu cầu số tiền nhân 100
         vnp_Params.put("vnp_CurrCode", "VND");
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
         vnp_Params.put("vnp_OrderInfo", orderInfo);
@@ -114,6 +126,23 @@ public class VNPayServiceImpl implements VNPayService {
         String queryUrl = query.toString();
         String vnp_SecureHash = VnPayConfiguration.hmacSHA512(VnPayConfiguration.vnp_HashSecret, hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
+
+        // Lưu payment mới nếu chưa tồn tại, hoặc tái sử dụng existingPayment nếu có
+        if (existingPayment == null) {
+            existingPayment = Payment.builder()
+                    .booking(booking)
+                    .amount(BigDecimal.valueOf(total))
+                    .paymentMethod("VNPAY")
+                    .transactionId(vnp_TxnRef) // Sử dụng transactionId mới
+                    .status(PaymentStatus.PENDING)
+                    .build();
+            paymentRepository.save(existingPayment);
+        } else {
+            existingPayment.setTransactionId(vnp_TxnRef); // Cập nhật transactionId mới cho lần thanh toán lại
+            existingPayment.setStatus(PaymentStatus.PENDING); // Đặt lại trạng thái thành PENDING
+            paymentRepository.save(existingPayment);
+        }
+
         return VnPayConfiguration.vnp_PayUrl + "?" + queryUrl;
     }
 
@@ -154,76 +183,77 @@ public class VNPayServiceImpl implements VNPayService {
     }
 
     @Override
-    @Transactional
     public ApiResponse<String> getPaymentInfo(HttpServletRequest request) {
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> getPaymentInfo(HttpServletRequest request, HttpServletResponse response) {
         int paymentStatus = orderReturn(request);
         String orderInfo = request.getParameter("vnp_OrderInfo");
         String transactionId = request.getParameter("vnp_TransactionNo");
         BigDecimal amount = new BigDecimal(request.getParameter("vnp_Amount")).divide(new BigDecimal(100));
+        String redirectUrlParam = request.getParameter("redirectUrl"); // Lấy redirectUrl từ request
 
         Long bookingId = extractBookingIdFromOrderInfo(orderInfo);
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        // [NEW] Check if payment already successful
-        Optional<Payment> existingPaymentByTransaction = paymentRepository.findByTransactionId(transactionId);
-        if (existingPaymentByTransaction.isPresent() && existingPaymentByTransaction.get().getStatus() == PaymentStatus.SUCCESS) {
-            return ApiResponse.<String>builder()
-                    .message("Payment Already Processed")
-                    .result("Booking ID: " + bookingId + " has already been paid with transaction ID: " + transactionId)
-                    .build();
-        }
+        // Lấy payment hiện tại của booking
+        Payment existingPayment = paymentRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        Optional<Payment> existingPaymentByBooking = paymentRepository.findByBookingId(bookingId);
-        if (existingPaymentByBooking.isPresent() && existingPaymentByBooking.get().getStatus() == PaymentStatus.SUCCESS) {
-            return ApiResponse.<String>builder()
-                    .message("Payment Already Processed")
-                    .result("Booking ID: " + bookingId + " has already been paid")
-                    .build();
+        // Kiểm tra nếu đã có payment SUCCESS từ trước
+        if (existingPayment.getStatus() == PaymentStatus.SUCCESS) {
+            try {
+                String redirectUrl = redirectUrlParam != null && !redirectUrlParam.isEmpty() ? redirectUrlParam : DEFAULT_SUCCESS_REDIRECT_URL;
+                response.sendRedirect(redirectUrl); // Chuyển hướng ngay lập tức
+                return null; // Không trả JSON khi redirect
+            } catch (IOException e) {
+                throw new RuntimeException("Redirect failed", e);
+            }
         }
 
         if (paymentStatus == 1) {
-            Payment payment = Payment.builder()
-                    .booking(booking)
-                    .amount(amount)
-                    .paymentMethod("VNPAY")
-                    .transactionId(transactionId)
-                    .status(PaymentStatus.SUCCESS)
-                    .paymentTime(LocalDateTime.now())
-                    .build();
-
-            paymentRepository.save(payment);
+            // Cập nhật payment hiện tại thành SUCCESS thay vì tạo mới
+            existingPayment.setStatus(PaymentStatus.SUCCESS);
+            existingPayment.setTransactionId(transactionId); // Cập nhật transactionId mới
+            existingPayment.setAmount(amount);
+            existingPayment.setPaymentTime(LocalDateTime.now());
+            paymentRepository.save(existingPayment);
 
             booking.setPaymentStatus(PaymentStatus.SUCCESS);
-            booking.setPayment(payment);
+            booking.setPayment(existingPayment);
             bookingRepository.save(booking);
 
-            return ApiResponse.<String>builder()
-                    .message("Payment Success")
-                    .result("Booking ID: " + bookingId + " paid successfully")
-                    .build();
+            try {
+                String redirectUrl = redirectUrlParam != null && !redirectUrlParam.isEmpty() ? redirectUrlParam : DEFAULT_SUCCESS_REDIRECT_URL;
+                response.sendRedirect(redirectUrl); // Chuyển hướng ngay lập tức
+                return null; // Không trả JSON khi redirect
+            } catch (IOException e) {
+                throw new RuntimeException("Redirect failed", e);
+            }
         } else if (paymentStatus == 0) {
-            Payment payment = Payment.builder()
-                    .booking(booking)
-                    .amount(amount)
-                    .paymentMethod("VNPAY")
-                    .transactionId(transactionId)
-                    .status(PaymentStatus.FAILED)
-                    .paymentTime(LocalDateTime.now())
-                    .build();
-
-            paymentRepository.save(payment);
+            // Cập nhật trạng thái thành FAILED nếu thanh toán thất bại
+            existingPayment.setStatus(PaymentStatus.FAILED);
+            existingPayment.setTransactionId(transactionId);
+            existingPayment.setAmount(amount);
+            existingPayment.setPaymentTime(LocalDateTime.now());
+            paymentRepository.save(existingPayment);
 
             booking.setPaymentStatus(PaymentStatus.FAILED);
-            booking.setPayment(payment);
+            booking.setPayment(existingPayment);
             bookingRepository.save(booking);
 
             return ApiResponse.<String>builder()
+                    .code(1001) // Thất bại
                     .message("Payment Failed")
-                    .result("Booking ID: " + bookingId + " payment failed")
+                    .result("Booking ID: " + bookingId + " payment failed with transaction ID: " + transactionId)
                     .build();
         } else {
             return ApiResponse.<String>builder()
+                    .code(1002) // Lỗi
                     .message("Error! Secure Hash is invalid!")
                     .result(null)
                     .build();
