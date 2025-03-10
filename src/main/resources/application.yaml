@@ -53,6 +53,8 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-
+booking:
+  auto-cancel:
+    minutes: 30
 
 

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
@@ -23,7 +24,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Tính tổng doanh thu theo ngày
     @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.bookingDate = :date AND b.status = :status")
     BigDecimal sumTotalPriceByBookingDateAndStatus(LocalDate date, BookingStatus status);
-
+    List<Booking> findByStatusAndCreatedAtBefore(BookingStatus status, LocalDateTime threshold);
     // Tính tổng doanh thu trong khoảng thời gian
     @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.bookingDate BETWEEN :startDate AND :endDate AND b.status = :status")
     BigDecimal sumTotalPriceByBookingDateBetweenAndStatus(LocalDate startDate, LocalDate endDate, BookingStatus status);
