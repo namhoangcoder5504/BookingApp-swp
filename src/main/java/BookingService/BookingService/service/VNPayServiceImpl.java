@@ -2,6 +2,7 @@ package BookingService.BookingService.service;
 
 import BookingService.BookingService.configuration.VnPayConfiguration;
 import BookingService.BookingService.dto.request.ApiResponse;
+import BookingService.BookingService.dto.response.PaymentResponse;
 import BookingService.BookingService.entity.Booking;
 import BookingService.BookingService.entity.Payment;
 import BookingService.BookingService.enums.BookingStatus;
@@ -27,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -258,6 +260,24 @@ public class VNPayServiceImpl implements VNPayService {
                     .result(null)
                     .build();
         }
+    }
+
+    @Override
+    public List<PaymentResponse> getAllPayments() {
+        List<Payment> payments = paymentRepository.findAll();
+        return payments.stream()
+                .map(payment -> {
+                    PaymentResponse response = new PaymentResponse();
+                    response.setPaymentId(payment.getPaymentId());
+                    response.setAmount(payment.getAmount());
+                    response.setPaymentMethod(payment.getPaymentMethod());
+                    response.setPaymentTime(payment.getPaymentTime());
+                    response.setStatus(payment.getStatus());
+                    response.setTransactionId(payment.getTransactionId());
+                    response.setBookingId(payment.getBooking() != null ? payment.getBooking().getBookingId() : null);
+                    return response;
+                })
+                .collect(Collectors.toList());
     }
 
     private Long extractBookingIdFromOrderInfo(String orderInfo) {

@@ -1,6 +1,7 @@
 package BookingService.BookingService.controller;
 
 import BookingService.BookingService.dto.request.ApiResponse;
+import BookingService.BookingService.dto.response.PaymentResponse;
 import BookingService.BookingService.service.VNPayService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -8,9 +9,12 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,6 +39,12 @@ public class VNPayController {
     @GetMapping("/payment-info")
     public ApiResponse<String> getPaymentInfo(HttpServletRequest request, HttpServletResponse response) {
         return vnPayService.getPaymentInfo(request, response);
+    }
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<List<PaymentResponse>> getAllPayments() {
+        List<PaymentResponse> payments = vnPayService.getAllPayments();
+        return ResponseEntity.ok(payments);
     }
 }
 
