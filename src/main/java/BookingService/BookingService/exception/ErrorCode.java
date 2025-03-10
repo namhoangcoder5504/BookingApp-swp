@@ -53,7 +53,8 @@ public enum ErrorCode {
     BOOKING_NOT_CHECKED_IN(1054,"Booking must be checkin",HttpStatus.NOT_FOUND),
     BOOKING_NOT_CONFIRMED(1055,"Booking must be CONFIRM",HttpStatus.NOT_FOUND),
     INVALID_DATE_RANGE(1057,"invalid date range",HttpStatus.NOT_FOUND),
-    BOOKING_NOT_CHECKED_IN_BEFORE_PAYMENT(1056, "Booking must be checked in before payment", HttpStatus.BAD_REQUEST)
+    BOOKING_NOT_CHECKED_IN_BEFORE_PAYMENT(1056, "Booking must be checked in before payment", HttpStatus.BAD_REQUEST),
+    BOOKING_STATUS_INVALID(1058,"booking status must be PENDING",HttpStatus.NOT_FOUND)
     ;
 
 

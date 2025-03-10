@@ -290,11 +290,16 @@ public class BookingService {
         bookingRepository.deleteById(id);
     }
 
-    public BookingResponse updateBookingStatusByStaff(Long bookingId, BookingStatus newStatus) {
+    public BookingResponse updateBookingStatusByStaff(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_EXISTED));
 
-        booking.setStatus(newStatus);
+        // Kiểm tra trạng thái hiện tại phải là PENDING
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new AppException(ErrorCode.BOOKING_STATUS_INVALID); // Hoặc mã lỗi phù hợp
+        }
+
+        booking.setStatus(BookingStatus.CONFIRMED); // Cập nhật thành CONFIRMED
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
 
