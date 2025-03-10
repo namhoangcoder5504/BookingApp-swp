@@ -14,7 +14,9 @@ import java.util.List;
 public class BookingResponse {
     private Long bookingId;
     private Long customerId;
+    private String customerName;
     private Long specialistId;
+    private String specialistName;
     private List<String> serviceNames;
     private LocalDate bookingDate;
     private String timeSlot;
