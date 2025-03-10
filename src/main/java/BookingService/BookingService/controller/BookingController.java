@@ -129,4 +129,10 @@ public class BookingController {
         BigDecimal revenue = bookingService.getRevenueInRange(start, end);
         return ResponseEntity.ok(revenue);
     }
+    @GetMapping("/specialist")
+    @PreAuthorize("hasRole('SPECIALIST')") // Restrict to SPECIALIST role only
+    public ResponseEntity<List<BookingResponse>> getBookingsForCurrentSpecialist() {
+        List<BookingResponse> bookings = bookingService.getBookingsForCurrentSpecialist();
+        return ResponseEntity.ok(bookings);
+    }
 }

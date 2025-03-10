@@ -511,6 +511,21 @@ public class BookingService {
                 BookingStatus.COMPLETED
         );
     }
+    public List<BookingResponse> getBookingsForCurrentSpecialist() {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentSpecialist = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+        // Verify the user is a specialist
+        if (currentSpecialist.getRole() != Role.SPECIALIST) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        List<Booking> bookings = bookingRepository.findBySpecialist(currentSpecialist);
+        return bookings.stream()
+                .map(bookingMapper::toResponse)
+                .collect(Collectors.toList());
+    }
     // Phương thức xây dựng email
     private String buildConfirmationEmail(String customerName, String specialistName, LocalDate bookingDate, String timeSlot, BigDecimal totalPrice) {
         return "<!DOCTYPE html>" +
