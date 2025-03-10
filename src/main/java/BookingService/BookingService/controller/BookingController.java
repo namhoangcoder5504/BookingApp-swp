@@ -58,12 +58,10 @@ public class BookingController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{id}/status")
+    @PostMapping("/{id}/confirm")
     @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
-    public ResponseEntity<BookingResponse> updateBookingStatus(
-            @PathVariable Long id,
-            @RequestParam BookingStatus newStatus) {
-        BookingResponse response = bookingService.updateBookingStatusByStaff(id, newStatus);
+    public ResponseEntity<BookingResponse> updateBookingStatus(@PathVariable Long id) {
+        BookingResponse response = bookingService.updateBookingStatusByStaff(id);
         return ResponseEntity.ok(response);
     }
 

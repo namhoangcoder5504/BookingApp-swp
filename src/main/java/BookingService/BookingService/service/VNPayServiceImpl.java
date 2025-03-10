@@ -39,7 +39,7 @@ public class VNPayServiceImpl implements VNPayService {
     PaymentRepository paymentRepository;
 
     // URL thành công mặc định, có thể thay đổi
-    private static final String DEFAULT_SUCCESS_REDIRECT_URL = "https://www.youtube.com/";
+    private static final String DEFAULT_SUCCESS_REDIRECT_URL = "http://localhost:5173/mybooking";
 
     @Override
     @Transactional
