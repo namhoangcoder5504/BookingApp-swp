@@ -15,6 +15,7 @@ import BookingService.BookingService.repository.ServiceEntityRepository;
 import BookingService.BookingService.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +39,7 @@ public class BookingService {
     private static final LocalTime OPENING_TIME = LocalTime.of(8, 0); // 8:00 AM
     private static final LocalTime CLOSING_TIME = LocalTime.of(20, 0); // 8:00 PM
     private static final int MAX_BOOKING_DAYS_IN_ADVANCE = 7; // Giới hạn 7 ngày
-
+    private static final long AUTO_CANCEL_MINUTES = 30;
 
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
@@ -525,6 +526,57 @@ public class BookingService {
         return bookings.stream()
                 .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+    @Scheduled(fixedRate = 300000) // Chạy mỗi 5 phút (300,000 ms)
+    public void autoCancelPendingBookings() {
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(AUTO_CANCEL_MINUTES);
+        List<Booking> pendingBookings = bookingRepository.findByStatusAndCreatedAtBefore(
+                BookingStatus.PENDING, threshold);
+
+        for (Booking booking : pendingBookings) {
+            // Cập nhật trạng thái booking
+            booking.setStatus(BookingStatus.CANCELLED);
+            booking.setUpdatedAt(LocalDateTime.now());
+            bookingRepository.save(booking);
+
+            // Khôi phục lịch của Specialist
+            restorePreviousSchedule(booking.getSpecialist().getUserId(),
+                    booking.getBookingDate(),
+                    booking.getTimeSlot());
+
+            // Gửi thông báo cho khách hàng
+            String subject = "Lịch hẹn của bạn đã bị hủy tự động";
+            String htmlBody = buildAutoCancelEmail(booking.getCustomer().getName(),
+                    booking.getSpecialist().getName(),
+                    booking.getBookingDate(),
+                    booking.getTimeSlot());
+            emailService.sendEmail(booking.getCustomer().getEmail(), subject, htmlBody);
+            notificationService.createWebNotification(booking.getCustomer(),
+                    "Lịch hẹn của bạn vào ngày " + booking.getBookingDate() +
+                            ", khung giờ " + booking.getTimeSlot() + " đã bị hủy do quá thời gian xác nhận.");
+
+            // Thông báo cho Specialist
+            notificationService.notifySpecialistBookingCancelled(booking);
+        }
+    }
+
+    private String buildAutoCancelEmail(String customerName, String specialistName, LocalDate bookingDate, String timeSlot) {
+        return "<!DOCTYPE html>" +
+                "<html><head><style>" +
+                "body { font-family: Arial, sans-serif; color: #333; }" +
+                ".container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; }" +
+                ".header { background-color: #ff7e9d; color: white; padding: 10px; text-align: center; }" +
+                ".content { padding: 20px; background-color: white; }" +
+                "</style></head><body>" +
+                "<div class='container'>" +
+                "<div class='header'><h2>Lịch Hẹn Hủy Tự Động</h2></div>" +
+                "<div class='content'>" +
+                "<p>Xin chào " + customerName + ",</p>" +
+                "<p>Lịch hẹn của bạn với chuyên viên <strong>" + specialistName + "</strong> " +
+                "vào ngày <strong>" + bookingDate + "</strong>, khung giờ <strong>" + timeSlot + "</strong> " +
+                "đã bị hủy tự động do không được xác nhận hoặc thanh toán trong vòng " + AUTO_CANCEL_MINUTES + " phút.</p>" +
+                "<p>Vui lòng đặt lại lịch nếu cần!</p>" +
+                "</div></div></body></html>";
     }
     // Phương thức xây dựng email
     private String buildConfirmationEmail(String customerName, String specialistName, LocalDate bookingDate, String timeSlot, BigDecimal totalPrice) {
