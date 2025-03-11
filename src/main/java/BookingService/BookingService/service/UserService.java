@@ -191,6 +191,8 @@ public class UserService {
         }
         userRepository.deleteById(userId);
     }
+
+
     public List<UserResponse> getUsersByRole(Role role) {
         return userRepository.findAll().stream()
                 .filter(user -> user.getRole() == role)

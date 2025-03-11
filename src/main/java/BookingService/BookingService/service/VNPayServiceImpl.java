@@ -17,6 +17,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,26 +40,23 @@ public class VNPayServiceImpl implements VNPayService {
 
     BookingRepository bookingRepository;
     PaymentRepository paymentRepository;
-    EmailService emailService; // Thêm dependency EmailService
+    EmailService emailService;
 
-    // URL thành công mặc định, có thể thay đổi
     private static final String DEFAULT_SUCCESS_REDIRECT_URL = "http://localhost:5173/mybooking";
+    private static final String DEFAULT_FAILED_REDIRECT_URL = "http://localhost:5173/mybooking";
 
     @Override
     @Transactional
     @PreAuthorize("hasRole('USER')")
     public String createPayment(int total, String orderInfo, String urlReturn) {
-        // [NEW] Extract bookingId and check booking status
         Long bookingId = extractBookingIdFromOrderInfo(orderInfo);
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_EXISTED));
 
-        // [NEW] Check if booking status is IN_PROGRESS
         if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
             throw new AppException(ErrorCode.BOOKING_NOT_CHECKED_IN);
         }
 
-        // [NEW] Kiểm tra tổng tiền truyền vào khớp với totalPrice của booking
         if (total != booking.getTotalPrice().intValue()) {
             throw new AppException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
@@ -66,7 +65,7 @@ public class VNPayServiceImpl implements VNPayService {
                 .orElse(null);
 
         if (existingPayment != null && PaymentStatus.SUCCESS.equals(existingPayment.getStatus())) {
-            throw new AppException(ErrorCode.PAYMENT_NOT_COMPLETED); // Đã thanh toán thành công, không cho tạo mới
+            throw new AppException(ErrorCode.PAYMENT_NOT_COMPLETED);
         }
 
         String vnp_Version = "2.1.0";
@@ -80,7 +79,7 @@ public class VNPayServiceImpl implements VNPayService {
         vnp_Params.put("vnp_Version", vnp_Version);
         vnp_Params.put("vnp_Command", vnp_Command);
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-        vnp_Params.put("vnp_Amount", String.valueOf(total * 100)); // VNPay yêu cầu số tiền nhân 100
+        vnp_Params.put("vnp_Amount", String.valueOf(total * 100));
         vnp_Params.put("vnp_CurrCode", "VND");
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
         vnp_Params.put("vnp_OrderInfo", orderInfo);
@@ -131,19 +130,18 @@ public class VNPayServiceImpl implements VNPayService {
         String vnp_SecureHash = VnPayConfiguration.hmacSHA512(VnPayConfiguration.vnp_HashSecret, hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
 
-        // Lưu payment mới nếu chưa tồn tại, hoặc tái sử dụng existingPayment nếu có
         if (existingPayment == null) {
             existingPayment = Payment.builder()
                     .booking(booking)
                     .amount(BigDecimal.valueOf(total))
                     .paymentMethod("VNPAY")
-                    .transactionId(vnp_TxnRef) // Sử dụng transactionId mới
+                    .transactionId(vnp_TxnRef)
                     .status(PaymentStatus.PENDING)
                     .build();
             paymentRepository.save(existingPayment);
         } else {
-            existingPayment.setTransactionId(vnp_TxnRef); // Cập nhật transactionId mới cho lần thanh toán lại
-            existingPayment.setStatus(PaymentStatus.PENDING); // Đặt lại trạng thái thành PENDING
+            existingPayment.setTransactionId(vnp_TxnRef);
+            existingPayment.setStatus(PaymentStatus.PENDING);
             paymentRepository.save(existingPayment);
         }
 
@@ -198,31 +196,36 @@ public class VNPayServiceImpl implements VNPayService {
         String orderInfo = request.getParameter("vnp_OrderInfo");
         String transactionId = request.getParameter("vnp_TransactionNo");
         BigDecimal amount = new BigDecimal(request.getParameter("vnp_Amount")).divide(new BigDecimal(100));
-        String redirectUrlParam = request.getParameter("redirectUrl"); // Lấy redirectUrl từ request
+        String redirectUrlParam = request.getParameter("redirectUrl");
 
         Long bookingId = extractBookingIdFromOrderInfo(orderInfo);
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        // Lấy payment hiện tại của booking
         Payment existingPayment = paymentRepository.findByBookingId(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        // Kiểm tra nếu đã có payment SUCCESS từ trước
+        // Lấy token từ SecurityContext (giả sử bạn dùng JWT)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String token = authentication != null ? (String) authentication.getCredentials() : null;
+        if (token == null) {
+            token = "fallback-token"; // Thay bằng logic tạo token nếu cần
+        }
+
         if (existingPayment.getStatus() == PaymentStatus.SUCCESS) {
             try {
                 String redirectUrl = redirectUrlParam != null && !redirectUrlParam.isEmpty() ? redirectUrlParam : DEFAULT_SUCCESS_REDIRECT_URL;
-                response.sendRedirect(redirectUrl); // Chuyển hướng ngay lập tức
-                return null; // Không trả JSON khi redirect
+                redirectUrl += "?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8.toString()) + "&status=success";
+                response.sendRedirect(redirectUrl);
+                return null;
             } catch (IOException e) {
                 throw new RuntimeException("Redirect failed", e);
             }
         }
 
         if (paymentStatus == 1) {
-            // Cập nhật payment hiện tại thành SUCCESS thay vì tạo mới
             existingPayment.setStatus(PaymentStatus.SUCCESS);
-            existingPayment.setTransactionId(transactionId); // Cập nhật transactionId mới
+            existingPayment.setTransactionId(transactionId);
             existingPayment.setAmount(amount);
             existingPayment.setPaymentTime(LocalDateTime.now());
             paymentRepository.save(existingPayment);
@@ -231,7 +234,6 @@ public class VNPayServiceImpl implements VNPayService {
             booking.setPayment(existingPayment);
             bookingRepository.save(booking);
 
-            // Gửi email hóa đơn khi thanh toán thành công
             String customerEmail = booking.getCustomer() != null ? booking.getCustomer().getEmail() : null;
             String customerName = booking.getCustomer() != null ? booking.getCustomer().getName() : "Khách hàng";
             String specialistName = booking.getSpecialist() != null ? booking.getSpecialist().getName() : "Chuyên viên";
@@ -257,19 +259,17 @@ public class VNPayServiceImpl implements VNPayService {
                 } catch (Exception e) {
                     System.err.println("Failed to send payment bill email: " + e.getMessage());
                 }
-            } else {
-                System.err.println("Customer email is null or empty, payment bill email not sent.");
             }
 
             try {
                 String redirectUrl = redirectUrlParam != null && !redirectUrlParam.isEmpty() ? redirectUrlParam : DEFAULT_SUCCESS_REDIRECT_URL;
-                response.sendRedirect(redirectUrl); // Chuyển hướng ngay lập tức
-                return null; // Không trả JSON khi redirect
+                redirectUrl += "?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8.toString()) + "&status=success";
+                response.sendRedirect(redirectUrl);
+                return null;
             } catch (IOException e) {
                 throw new RuntimeException("Redirect failed", e);
             }
         } else if (paymentStatus == 0) {
-            // Cập nhật trạng thái thành FAILED nếu thanh toán thất bại
             existingPayment.setStatus(PaymentStatus.FAILED);
             existingPayment.setTransactionId(transactionId);
             existingPayment.setAmount(amount);
@@ -280,14 +280,17 @@ public class VNPayServiceImpl implements VNPayService {
             booking.setPayment(existingPayment);
             bookingRepository.save(booking);
 
-            return ApiResponse.<String>builder()
-                    .code(1001) // Thất bại
-                    .message("Payment Failed")
-                    .result("Booking ID: " + bookingId + " payment failed with transaction ID: " + transactionId)
-                    .build();
+            try {
+                String redirectUrl = redirectUrlParam != null && !redirectUrlParam.isEmpty() ? redirectUrlParam : DEFAULT_FAILED_REDIRECT_URL;
+                redirectUrl += "?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8.toString()) + "&status=failed";
+                response.sendRedirect(redirectUrl);
+                return null;
+            } catch (IOException e) {
+                throw new RuntimeException("Redirect failed", e);
+            }
         } else {
             return ApiResponse.<String>builder()
-                    .code(1002) // Lỗi
+                    .code(1002)
                     .message("Error! Secure Hash is invalid!")
                     .result(null)
                     .build();
@@ -321,7 +324,6 @@ public class VNPayServiceImpl implements VNPayService {
         }
     }
 
-    // Phương thức xây dựng email hóa đơn
     private String buildPaymentBillEmail(String customerName, String specialistName, String transactionNo, String transactionTime, BigDecimal totalAmount) {
         return "<!DOCTYPE html>" +
                 "<html><head><style>" +
