@@ -54,7 +54,10 @@ public enum ErrorCode {
     BOOKING_NOT_CONFIRMED(1055,"Booking must be CONFIRM",HttpStatus.NOT_FOUND),
     INVALID_DATE_RANGE(1057,"invalid date range",HttpStatus.NOT_FOUND),
     BOOKING_NOT_CHECKED_IN_BEFORE_PAYMENT(1056, "Booking must be checked in before payment", HttpStatus.BAD_REQUEST),
-    BOOKING_STATUS_INVALID(1058,"booking status must be PENDING",HttpStatus.NOT_FOUND)
+    BOOKING_STATUS_INVALID(1058,"booking status must be PENDING",HttpStatus.NOT_FOUND),
+    INVALID_INPUT(1059, "Input data is invalid or missing", HttpStatus.BAD_REQUEST),
+    CONTACT_NOT_FOUND(1060, "Contact request not found", HttpStatus.NOT_FOUND),
+    EMAIL_SENDING_FAILED(1061, "Failed to send email", HttpStatus.INTERNAL_SERVER_ERROR);
     ;
 
 

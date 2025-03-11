@@ -1,6 +1,5 @@
 package BookingService.BookingService.configuration;
 
-
 import BookingService.BookingService.enums.Role;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -22,13 +21,11 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.spec.SecretKeySpec;
-import java.time.Duration;
 import java.util.List;
 
 @Configuration
@@ -55,14 +52,12 @@ public class SecurityConfig {
             "/api/quiz/questions-with-answers",
             "/api/users/specialists",
             "/api/users/specialists/active",
-            "/api/blogs/{id}"
-
-
+            "/api/blogs/{id}",
+            // Xóa /api/contact khỏi danh sách này để yêu cầu xác thực cho GET
     };
 
     @Value("${jwt.signerKey}")
     private String signerKey;
-
 
     @Autowired
     private CustomJwtDecoder customJwtDecoder;
@@ -70,20 +65,25 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
-                // Cho phép POST đến endpoints công khai mà không cần token
+                // Cho phép tất cả request đến endpoints công khai mà không cần token
                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                 // Chỉ ADMIN mới được GET danh sách user
                 .requestMatchers(HttpMethod.GET, "/users").hasRole(Role.ADMIN.name())
+                // Chỉ ADMIN và STAFF được truy cập GET /api/contact
+                .requestMatchers(HttpMethod.GET, "/api/contact").hasAnyRole(Role.ADMIN.name(), Role.STAFF.name())
+                // Chỉ ADMIN và STAFF được truy cập PUT /api/contact/{id}/status
+                .requestMatchers(HttpMethod.PUT, "/api/contact/**").hasAnyRole(Role.ADMIN.name(), Role.STAFF.name())
+                // Cho phép POST /api/contact mà không cần xác thực (theo yêu cầu)
+                .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
+                // Tất cả các request khác yêu cầu xác thực
                 .anyRequest().authenticated()
         ).csrf(AbstractHttpConfigurer::disable);
 
-
         http.oauth2Login(oauth2 -> oauth2
-                .loginPage("/oauth2/authorization/google") // Điều hướng đến Google login
-                .defaultSuccessUrl("/auth/google/success", true) // Sau khi login thành công
-                .failureUrl("/auth/google/failure") // Nếu login thất bại
+                .loginPage("/oauth2/authorization/google")
+                .defaultSuccessUrl("/auth/google/success", true)
+                .failureUrl("/auth/google/failure")
         );
-
 
         // Sử dụng Resource Server JWT
         http.oauth2ResourceServer(oauth2 -> oauth2
@@ -93,12 +93,11 @@ public class SecurityConfig {
                 ).authenticationEntryPoint(new JwtAuthenticationEntryPoint())
         );
 
-//        http.sessionManagement(session -> session
-//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-//        );
+        http.sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        );
 
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
-
 
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
@@ -108,7 +107,6 @@ public class SecurityConfig {
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
         grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
-        // Thêm dòng này để nó đọc claim "role" thay vì "scope"
         grantedAuthoritiesConverter.setAuthoritiesClaimName("role");
 
         JwtAuthenticationConverter authConverter = new JwtAuthenticationConverter();
@@ -133,7 +131,7 @@ public class SecurityConfig {
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
-                .openapi("3.0.1") // Khai báo phiên bản OpenAPI hợp lệ
+                .openapi("3.0.1")
                 .info(new Info()
                         .title("Booking Service API")
                         .version("1.0")
@@ -153,5 +151,4 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
 }
