@@ -27,6 +27,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,7 @@ public class VNPayServiceImpl implements VNPayService {
 
     BookingRepository bookingRepository;
     PaymentRepository paymentRepository;
+    EmailService emailService; // Thêm dependency EmailService
 
     // URL thành công mặc định, có thể thay đổi
     private static final String DEFAULT_SUCCESS_REDIRECT_URL = "http://localhost:5173/mybooking";
@@ -229,6 +231,36 @@ public class VNPayServiceImpl implements VNPayService {
             booking.setPayment(existingPayment);
             bookingRepository.save(booking);
 
+            // Gửi email hóa đơn khi thanh toán thành công
+            String customerEmail = booking.getCustomer() != null ? booking.getCustomer().getEmail() : null;
+            String customerName = booking.getCustomer() != null ? booking.getCustomer().getName() : "Khách hàng";
+            String specialistName = booking.getSpecialist() != null ? booking.getSpecialist().getName() : "Chuyên viên";
+            String transactionNo = transactionId != null ? transactionId : "N/A";
+            String transactionTime = request.getParameter("vnp_PayDate");
+            if (transactionTime != null) {
+                try {
+                    transactionTime = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+                            .format(new SimpleDateFormat("yyyyMMddHHmmss").parse(transactionTime));
+                } catch (Exception e) {
+                    transactionTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+                }
+            } else {
+                transactionTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+            }
+            BigDecimal totalAmount = amount != null ? amount : BigDecimal.ZERO;
+
+            if (customerEmail != null && !customerEmail.isEmpty()) {
+                String subject = "Hóa đơn thanh toán thành công từ Beautya";
+                String htmlBody = buildPaymentBillEmail(customerName, specialistName, transactionNo, transactionTime, totalAmount);
+                try {
+                    emailService.sendEmail(customerEmail, subject, htmlBody);
+                } catch (Exception e) {
+                    System.err.println("Failed to send payment bill email: " + e.getMessage());
+                }
+            } else {
+                System.err.println("Customer email is null or empty, payment bill email not sent.");
+            }
+
             try {
                 String redirectUrl = redirectUrlParam != null && !redirectUrlParam.isEmpty() ? redirectUrlParam : DEFAULT_SUCCESS_REDIRECT_URL;
                 response.sendRedirect(redirectUrl); // Chuyển hướng ngay lập tức
@@ -287,5 +319,29 @@ public class VNPayServiceImpl implements VNPayService {
         } catch (Exception e) {
             throw new RuntimeException("Invalid orderInfo format: " + orderInfo);
         }
+    }
+
+    // Phương thức xây dựng email hóa đơn
+    private String buildPaymentBillEmail(String customerName, String specialistName, String transactionNo, String transactionTime, BigDecimal totalAmount) {
+        return "<!DOCTYPE html>" +
+                "<html><head><style>" +
+                "body { font-family: Arial, sans-serif; color: #333; }" +
+                ".container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; }" +
+                ".header { background-color: #ff7e9d; color: white; padding: 10px; text-align: center; border-radius: 5px 5px 0 0; }" +
+                ".content { padding: 20px; background-color: white; border-radius: 0 0 5px 5px; }" +
+                ".footer { text-align: center; font-size: 12px; color: #777; margin-top: 20px; }" +
+                "</style></head><body>" +
+                "<div class='container'>" +
+                "<div class='header'><h2>Hóa Đơn Thanh Toán</h2></div>" +
+                "<div class='content'>" +
+                "<p>Xin chào " + customerName + ",</p>" +
+                "<p>Cảm ơn bạn đã thanh toán dịch vụ tại Beautya với chuyên viên <strong>" + specialistName + "</strong>. Dưới đây là thông tin hóa đơn của bạn:</p>" +
+                "<p><strong>Mã tra cứu:</strong> " + transactionNo + "</p>" +
+                "<p><strong>Thời gian giao dịch:</strong> " + transactionTime + "</p>" +
+                "<p><strong>Tổng số tiền:</strong> " + totalAmount + " VNĐ</p>" +
+                "<p>Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ với chúng tôi.</p>" +
+                "</div>" +
+                "<div class='footer'>© 2025 Beautya. All rights reserved.</div>" +
+                "</div></body></html>";
     }
 }
