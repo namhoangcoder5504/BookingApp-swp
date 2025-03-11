@@ -168,5 +168,15 @@ public class UserController {
                 .map(specialistMapper::toSpecialistResponse)
                 .collect(Collectors.toList());
     }
-
+    @GetMapping("/role/{role}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserResponse>> getUsersByRole(@PathVariable String role) {
+        try {
+            Role userRole = Role.valueOf(role.toUpperCase());
+            List<UserResponse> users = userService.getUsersByRole(userRole);
+            return ResponseEntity.ok(users);
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.INVALID_ROLE);
+        }
+    }
 }

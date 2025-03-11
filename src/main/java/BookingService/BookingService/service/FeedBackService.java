@@ -30,7 +30,6 @@ public class FeedBackService {
     private final UserRepository userRepository;
     private final FeedbackMapper feedbackMapper;
 
-    // Tạo feedback cho một booking (chỉ được phép nếu booking đã COMPLETED và customer trùng khớp)
     public FeedbackResponse createFeedback(FeedbackRequest feedbackRequest) {
         // Lấy booking theo bookingId
         Booking booking = bookingRepository.findById(feedbackRequest.getBookingId())
@@ -57,6 +56,12 @@ public class FeedBackService {
             throw new AppException(ErrorCode.BOOKING_NOT_EXISTED);
         }
 
+        // Kiểm tra xem customer đã feedback cho booking này chưa
+        boolean feedbackExists = feedbackRepository.existsByBookingAndCustomer(booking, customer);
+        if (feedbackExists) {
+            throw new AppException(ErrorCode.FEEDBACK_ALREADY_EXISTS);
+        }
+
         // Lấy specialist từ booking
         User specialist = booking.getSpecialist();
 
@@ -74,7 +79,7 @@ public class FeedBackService {
         return feedbackMapper.toResponse(savedFeedback);
     }
 
-    // Lấy feedback theo booking
+
     public List<FeedbackResponse> getFeedbacksByBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_EXISTED));
@@ -84,7 +89,7 @@ public class FeedBackService {
                 .collect(Collectors.toList());
     }
 
-    // Lấy feedback của specialist theo specialistId (specialist chỉ được xem feedback của chính mình)
+
     public List<FeedbackResponse> getFeedbacksBySpecialist(Long specialistId) {
         // Lấy thông tin user đang đăng nhập từ SecurityContext
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -105,7 +110,6 @@ public class FeedBackService {
                 .map(feedbackMapper::toResponse)
                 .collect(Collectors.toList());
     }
-
 
     // Lấy tất cả feedback (cho admin và staff quản lý)
     public List<FeedbackResponse> getAllFeedback() {
