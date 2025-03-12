@@ -33,18 +33,18 @@ import java.util.List;
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/users",            // Tạo user
-            "/auth/token",       // Lấy token
-            "/auth/introspect", // Kiểm tra token
-            "/auth/logout",       // logout
-            "/auth/refresh",   // refresh token
-            "/forgotPassword/**",   // forgot password
+            "/api/users",
+            "/auth/token",
+            "/auth/introspect",
+            "/auth/logout",
+            "/auth/refresh",
+            "/forgotPassword/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/swagger-ui.html",
-            "/auth/google",       // Thêm endpoint cho Google login
-            "/oauth2/authorization/google", // Endpoint bắt đầu OAuth2 Google
-            "/login/oauth2/code/google",    // Callback từ Google
+            "/auth/google",
+            "/oauth2/authorization/google",
+            "/login/oauth2/code/google",
             "/api/v1/vnpay/payment-info",
             "/test",
             "/api/services",
@@ -53,7 +53,7 @@ public class SecurityConfig {
             "/api/users/specialists",
             "/api/users/specialists/active",
             "/api/blogs/{id}",
-            // Xóa /api/contact khỏi danh sách này để yêu cầu xác thực cho GET
+            "/api/bookings/guest" // Đảm bảo đã có
     };
 
     @Value("${jwt.signerKey}")

@@ -22,4 +22,8 @@ public class BookingRequest {
 
     @NotEmpty // hoặc @NotNull
     private List<Long> serviceIds;
+
+    private String customerName; // Tên khách hàng (bắt buộc cho guest)
+    private String customerEmail; // Email khách hàng (bắt buộc cho guest)
+    private String customerPhone; // Số điện thoại (tùy chọn)
 }

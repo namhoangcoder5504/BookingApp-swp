@@ -51,7 +51,7 @@ public class BookingService {
     private final NotificationService notificationService;
     @Value("${beautya.feedback.link}")
     private String feedbackLink;
-
+    private final UserService userService;
     // Phương thức chính (CRUD và nghiệp vụ chính)
     public BookingResponse createBooking(BookingRequest request) {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -603,6 +603,137 @@ public class BookingService {
         }
     }
 
+    public BookingResponse createGuestBooking(BookingRequest request) {
+        // Kiểm tra thông tin bắt buộc
+        String customerName = request.getCustomerName();
+        String customerEmail = request.getCustomerEmail();
+        if (customerName == null || customerName.trim().isEmpty()) {
+            throw new AppException(ErrorCode.NAME_INVALID);
+        }
+        if (customerEmail == null || customerEmail.trim().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_EMAIL);
+        }
+
+        // Tạo guest user
+        User guest = User.builder()
+                .email(customerEmail)
+                .name(customerName)
+                .phone(request.getCustomerPhone() != null ? request.getCustomerPhone() : "N/A")
+                .role(Role.GUEST)
+                .status("TEMPORARY")
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .password(null)
+                .build();
+
+        // Kiểm tra email trùng và xử lý
+        try {
+            guest = userService.saveUser(guest);
+        } catch (AppException e) {
+            if (e.getErrorCode() == ErrorCode.USER_EXISTED) {
+                User existingUser = userRepository.findByEmail(customerEmail)
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                if (existingUser.getRole() != Role.GUEST) {
+                    throw new AppException(ErrorCode.USER_EXISTED);
+                }
+                guest = existingUser;
+            } else {
+                throw e;
+            }
+        }
+
+        // Logic tạo booking
+        List<ServiceEntity> services = serviceRepository.findAllById(request.getServiceIds());
+        if (services.isEmpty()) {
+            throw new AppException(ErrorCode.SERVICE_NOT_EXISTED);
+        }
+        if (services.size() > MAX_SERVICES_PER_BOOKING) {
+            throw new AppException(ErrorCode.BOOKING_SERVICE_LIMIT_EXCEEDED);
+        }
+
+        BigDecimal totalPrice = services.stream()
+                .map(ServiceEntity::getPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        int totalDuration = services.stream().mapToInt(ServiceEntity::getDuration).sum();
+        LocalTime startTime = LocalTime.parse(request.getStartTime(), TIME_FORMATTER);
+        LocalTime endTime = startTime.plusMinutes(totalDuration);
+        String timeSlot = request.getStartTime() + "-" + endTime.format(TIME_FORMATTER);
+
+        if (startTime.isBefore(OPENING_TIME) || endTime.isAfter(CLOSING_TIME)) {
+            throw new AppException(ErrorCode.TIME_SLOT_OUTSIDE_WORKING_HOURS);
+        }
+
+        LocalDateTime bookingDateTime = LocalDateTime.of(request.getBookingDate(), startTime);
+        LocalDateTime maxBookingDate = LocalDateTime.now().plusDays(MAX_BOOKING_DAYS_IN_ADVANCE);
+        if (bookingDateTime.isBefore(LocalDateTime.now())) {
+            throw new AppException(ErrorCode.BOOKING_DATE_IN_PAST);
+        }
+        if (bookingDateTime.isAfter(maxBookingDate)) {
+            throw new AppException(ErrorCode.BOOKING_DATE_TOO_FAR_IN_FUTURE);
+        }
+
+        if (bookingRepository.existsByCustomerAndBookingDateAndTimeSlot(guest, request.getBookingDate(), timeSlot)) {
+            throw new AppException(ErrorCode.BOOKING_TIME_CONFLICT);
+        }
+
+        User specialist;
+        if (request.getSpecialistId() != null) {
+            specialist = userRepository.findById(request.getSpecialistId())
+                    .orElseThrow(() -> new AppException(ErrorCode.SKIN_THERAPIST_NOT_EXISTED));
+            if (specialist.getRole() == Role.SPECIALIST && !"ACTIVE".equals(specialist.getStatus())) {
+                throw new AppException(ErrorCode.SPECIALIST_NOT_ACTIVE);
+            }
+            if (!isSpecialistAvailable(specialist.getUserId(), request.getBookingDate(), startTime, endTime)) {
+                throw new AppException(ErrorCode.TIME_SLOT_UNAVAILABLE);
+            }
+        } else {
+            specialist = findAvailableSpecialist(request.getBookingDate(), startTime, endTime);
+        }
+
+        Schedule schedule = createScheduleForSpecialist(specialist.getUserId(), request.getBookingDate(), timeSlot);
+
+        Booking booking = bookingMapper.toEntity(request);
+        bookingMapper.setUserEntities(booking, guest, specialist);
+
+        booking.setServices(services);
+        booking.setTotalPrice(totalPrice);
+        booking.setTimeSlot(timeSlot);
+        booking.setStatus(BookingStatus.PENDING);
+        booking.setPaymentStatus(PaymentStatus.PENDING);
+        booking.setCreatedAt(LocalDateTime.now());
+        booking.setUpdatedAt(LocalDateTime.now());
+
+        Booking savedBooking = bookingRepository.save(booking);
+
+        schedule.setAvailability(false);
+        scheduleRepository.save(schedule);
+
+        // Gửi email xác nhận
+        String subject = "Đặt lịch thành công tại Beautya!";
+        String htmlBody = buildConfirmationEmail(guest.getName(), specialist.getName(), savedBooking.getBookingDate(), timeSlot, totalPrice);
+        emailService.sendEmail(guest.getEmail(), subject, htmlBody);
+
+        notificationService.createWebNotification(guest,
+                "Bạn đã đặt lịch thành công vào ngày " + savedBooking.getBookingDate() +
+                        ", khung giờ " + savedBooking.getTimeSlot() + " với chuyên viên " + specialist.getName());
+        notificationService.notifySpecialistNewBooking(savedBooking);
+
+        return bookingMapper.toResponse(savedBooking);
+    }
+    @Scheduled(cron = "0 0 1 * * ?") // Chạy lúc 1:00 AM mỗi ngày
+    public void autoDeleteTemporaryGuests() {
+        LocalDateTime threshold = LocalDateTime.now().minusDays(1); // 24 giờ trước
+        List<User> expiredGuests = userRepository.findTemporaryGuestsBefore(threshold);
+
+        for (User guest : expiredGuests) {
+            // Chỉ xóa nếu không còn booking liên quan
+            if (!userRepository.hasBookings(guest)) {
+                userRepository.delete(guest);
+//                log.info("Deleted temporary guest user: {}", guest.getEmail());
+            }
+        }
+    }
 
     private String buildExpiredBookingEmail(String customerName, String specialistName, LocalDate bookingDate, String timeSlot) {
         return "<!DOCTYPE html>" +

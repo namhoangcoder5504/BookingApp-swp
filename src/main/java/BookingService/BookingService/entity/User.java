@@ -1,6 +1,5 @@
 package BookingService.BookingService.entity;
 
-
 import BookingService.BookingService.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,12 +23,12 @@ public class User {
     @Column(nullable = false, unique = true)
     String email;
 
-    @Column(nullable = false)
+    @Column(nullable = true) // Cho phép null vì guest không cần password
     String password;
 
     @Column(name = "name")
-
     String name;
+
     String phone;
     String address;
 
@@ -38,10 +37,10 @@ public class User {
 
     @OneToOne(mappedBy = "user")
     private ForgotPassword forgotPassword;
+
     @Column(name = "status")
     private String status = "ACTIVE";
 
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }
-
