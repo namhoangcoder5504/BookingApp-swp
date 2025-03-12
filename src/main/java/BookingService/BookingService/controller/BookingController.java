@@ -128,4 +128,11 @@ public class BookingController {
         List<BookingResponse> bookings = bookingService.getBookingsForCurrentSpecialist();
         return ResponseEntity.ok(bookings);
     }
+
+
+    @PostMapping("/guest")
+    public ResponseEntity<BookingResponse> createGuestBooking(@Valid @RequestBody BookingRequest request) {
+        BookingResponse response = bookingService.createGuestBooking(request);
+        return ResponseEntity.ok(response);
+    }
 }
