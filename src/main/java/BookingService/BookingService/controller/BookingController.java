@@ -2,18 +2,12 @@ package BookingService.BookingService.controller;
 
 import BookingService.BookingService.dto.request.BookingRequest;
 import BookingService.BookingService.dto.response.BookingResponse;
-import BookingService.BookingService.entity.Notification;
-import BookingService.BookingService.entity.User;
-import BookingService.BookingService.enums.BookingStatus;
-import BookingService.BookingService.exception.AppException;
-import BookingService.BookingService.exception.ErrorCode;
 import BookingService.BookingService.service.BookingService;
 import BookingService.BookingService.service.NotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -50,7 +44,6 @@ public class BookingController {
     public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody BookingRequest request) {
         return ResponseEntity.ok(bookingService.createBooking(request));
     }
-
     @PostMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('CUSTOMER','ADMIN','STAFF')") // Loại SPECIALIST nếu không cần
     public ResponseEntity<BookingResponse> cancelBooking(@PathVariable Long id) {
