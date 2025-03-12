@@ -559,7 +559,72 @@ public class BookingService {
             notificationService.notifySpecialistBookingCancelled(booking);
         }
     }
+    @Scheduled(cron = "0 0 1 * * ?") // Chạy lúc 1:00 AM mỗi ngày
+    public void autoCancelExpiredBookings() {
+        LocalDate yesterday = LocalDate.now().minusDays(1); // Lấy ngày hôm qua
+        List<Booking> expiredBookings = bookingRepository.findByBookingDateBeforeAndStatusIn(
+                yesterday,
+                List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS)
+        );
 
+        for (Booking booking : expiredBookings) {
+
+            booking.setStatus(BookingStatus.CANCELLED);
+            booking.setUpdatedAt(LocalDateTime.now());
+            bookingRepository.save(booking);
+
+
+            restorePreviousSchedule(
+                    booking.getSpecialist().getUserId(),
+                    booking.getBookingDate(),
+                    booking.getTimeSlot()
+            );
+
+
+            String subject = "Lịch hẹn của bạn đã tự động bị hủy do hết hạn";
+            String htmlBody = buildExpiredBookingEmail(
+                    booking.getCustomer().getName(),
+                    booking.getSpecialist().getName(),
+                    booking.getBookingDate(),
+                    booking.getTimeSlot()
+            );
+            emailService.sendEmail(booking.getCustomer().getEmail(), subject, htmlBody);
+
+
+            notificationService.createWebNotification(
+                    booking.getCustomer(),
+                    "Lịch hẹn của bạn vào ngày " + booking.getBookingDate() +
+                            ", khung giờ " + booking.getTimeSlot() +
+                            " đã tự động bị hủy do đã qua ngày thực hiện."
+            );
+
+
+            notificationService.notifySpecialistBookingCancelled(booking);
+        }
+    }
+
+
+    private String buildExpiredBookingEmail(String customerName, String specialistName, LocalDate bookingDate, String timeSlot) {
+        return "<!DOCTYPE html>" +
+                "<html><head><style>" +
+                "body { font-family: Arial, sans-serif; color: #333; }" +
+                ".container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; }" +
+                ".header { background-color: #ff7e9d; color: white; padding: 10px; text-align: center; border-radius: 5px 5px 0 0; }" +
+                ".content { padding: 20px; background-color: white; border-radius: 0 0 5px 5px; }" +
+                ".footer { text-align: center; font-size: 12px; color: #777; margin-top: 20px; }" +
+                "</style></head><body>" +
+                "<div class='container'>" +
+                "<div class='header'><h2>Lịch Hẹn Hết Hạn</h2></div>" +
+                "<div class='content'>" +
+                "<p>Xin chào " + customerName + ",</p>" +
+                "<p>Lịch hẹn của bạn với chuyên viên <strong>" + specialistName + "</strong> " +
+                "vào ngày <strong>" + bookingDate + "</strong>, khung giờ <strong>" + timeSlot + "</strong> " +
+                "đã tự động bị hủy vì đã qua ngày thực hiện.</p>" +
+                "<p>Vui lòng đặt lại lịch nếu bạn vẫn muốn sử dụng dịch vụ!</p>" +
+                "</div>" +
+                "<div class='footer'>© 2025 Beautya. All rights reserved.</div>" +
+                "</div></body></html>";
+    }
     private String buildAutoCancelEmail(String customerName, String specialistName, LocalDate bookingDate, String timeSlot) {
         return "<!DOCTYPE html>" +
                 "<html><head><style>" +
