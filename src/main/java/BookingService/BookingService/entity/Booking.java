@@ -1,6 +1,7 @@
 package BookingService.BookingService.entity;
 
 import BookingService.BookingService.enums.BookingStatus;
+import BookingService.BookingService.enums.FeedbackStatus;
 import BookingService.BookingService.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -70,4 +71,7 @@ public class Booking {
             inverseJoinColumns = @JoinColumn(name = "service_id")
     )
     private List<ServiceEntity> services;
+    @Column(name = "feedback_status")
+    @Enumerated(EnumType.STRING)
+    FeedbackStatus feedbackStatus = FeedbackStatus.NOT_FEEDBACK;
 }

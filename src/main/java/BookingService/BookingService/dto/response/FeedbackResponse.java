@@ -1,5 +1,6 @@
 package BookingService.BookingService.dto.response;
 
+import BookingService.BookingService.enums.FeedbackStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -17,4 +18,5 @@ public class FeedbackResponse {
     private int rating;
     private String comment;
     private LocalDateTime createdAt;
+    private FeedbackStatus feedbackStatus;
 }

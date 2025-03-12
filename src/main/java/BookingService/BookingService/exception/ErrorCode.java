@@ -59,7 +59,8 @@ public enum ErrorCode {
     CONTACT_NOT_FOUND(1060, "Contact request not found", HttpStatus.NOT_FOUND),
     EMAIL_SENDING_FAILED(1061, "Failed to send email", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_ROLE(1062, "invalid role", HttpStatus.BAD_REQUEST),
-    FEEDBACK_ALREADY_EXISTS(1063,"feedback alreadly exist",HttpStatus.BAD_REQUEST)
+    FEEDBACK_ALREADY_EXISTS(1063,"feedback alreadly exist",HttpStatus.BAD_REQUEST),
+    FEEDBACK_ALREADY_DONE(1064,"feedback already done",HttpStatus.NOT_FOUND)
     ;
 
 
