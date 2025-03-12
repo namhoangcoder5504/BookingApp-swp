@@ -5,5 +5,5 @@ public enum Role {
     CUSTOMER,
     STAFF,
     SPECIALIST,
-    GUEST // Thêm vai trò mới cho khách vãng lai
+    GUEST
 }
