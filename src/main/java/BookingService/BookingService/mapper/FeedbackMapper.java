@@ -14,5 +14,7 @@ public interface FeedbackMapper {
     @Mapping(source = "rating", target = "rating")
     @Mapping(source = "comment", target = "comment")
     @Mapping(source = "createdAt", target = "createdAt")
+    @Mapping(source = "customer.name", target = "customerName")
+    @Mapping(source = "specialist.name", target = "specialistName")
     FeedbackResponse toResponse(Feedback feedback);
 }

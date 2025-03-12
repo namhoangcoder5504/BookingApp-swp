@@ -17,7 +17,7 @@ public class BookingResponse {
     private Long customerId;
     private String customerName;
     private Long specialistId;
-    private String specialistName;
+        private String specialistName;
     private List<String> serviceNames;
     private Map<String, Integer> serviceDurations;
     private Map<String, BigDecimal> servicePrices;

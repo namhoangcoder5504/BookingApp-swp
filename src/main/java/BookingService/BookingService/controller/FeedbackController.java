@@ -33,9 +33,9 @@ public class FeedbackController {
     }
 
     // Lấy feedback của specialist (chỉ specialist được xem feedback của chính mình)
-    @GetMapping("/specialist/{specialistId}")
-    public ResponseEntity<List<FeedbackResponse>> getFeedbacksBySpecialist(@PathVariable Long specialistId) {
-        List<FeedbackResponse> feedbacks = feedBackService.getFeedbacksBySpecialist(specialistId);
+    @GetMapping("/specialist/feedbacks")
+    public ResponseEntity<List<FeedbackResponse>> getFeedbacksBySpecialist() {
+        List<FeedbackResponse> feedbacks = feedBackService.getFeedbacksBySpecialist();
         return ResponseEntity.ok(feedbacks);
     }
 
