@@ -8,8 +8,12 @@ import java.time.LocalDateTime;
 public class FeedbackResponse {
     private Long feedbackId;
     private Long bookingId;
+
+
     private Long customerId;
+    private String customerName;
     private Long specialistId;
+    private String specialistName;
     private int rating;
     private String comment;
     private LocalDateTime createdAt;
