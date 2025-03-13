@@ -80,11 +80,10 @@ public class SecurityConfig {
         ).csrf(AbstractHttpConfigurer::disable);
 
         http.oauth2Login(oauth2 -> oauth2
-                .loginPage("/oauth2/authorization/google")
-                .defaultSuccessUrl("/auth/google/success", true)
-                .failureUrl("/auth/google/failure")
+                .loginPage("/oauth2/authorization/google") // Điều hướng đến Google login
+                .defaultSuccessUrl("/auth/google/success", true) // Sau khi login thành công
+                .failureUrl("/auth/google/failure") // Nếu login thất bại
         );
-
         // Sử dụng Resource Server JWT
         http.oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt
@@ -93,9 +92,9 @@ public class SecurityConfig {
                 ).authenticationEntryPoint(new JwtAuthenticationEntryPoint())
         );
 
-        http.sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        );
+//        http.sessionManagement(session -> session
+//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+//        );
 
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 

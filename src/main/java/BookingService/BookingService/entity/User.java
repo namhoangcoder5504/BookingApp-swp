@@ -42,7 +42,7 @@ public class User {
 
     @Column(name = "status")
     private String status = "ACTIVE";
-    @OneToMany(mappedBy = "user") // Thêm mối quan hệ ngược với Image
+    @OneToMany(mappedBy = "user")
     private List<Image> images;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
