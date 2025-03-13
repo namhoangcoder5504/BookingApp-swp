@@ -123,7 +123,7 @@ public class BookingController {
         return ResponseEntity.ok(revenue);
     }
     @GetMapping("/specialist")
-    @PreAuthorize("hasRole('SPECIALIST')") // Restrict to SPECIALIST role only
+    @PreAuthorize("hasRole('SPECIALIST')")
     public ResponseEntity<List<BookingResponse>> getBookingsForCurrentSpecialist() {
         List<BookingResponse> bookings = bookingService.getBookingsForCurrentSpecialist();
         return ResponseEntity.ok(bookings);
