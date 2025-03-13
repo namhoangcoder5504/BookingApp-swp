@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -18,7 +19,8 @@ public class SpecialistResponse {
     String phone;
     String address;
     Role role;
-    String status; // Trường status cho chuyên viên
+    String status;
+    List<ImageResponse> images;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }

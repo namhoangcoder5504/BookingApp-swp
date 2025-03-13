@@ -34,9 +34,14 @@ public class Image {
     ServiceEntity service;
 
     @ManyToOne
-    @JoinColumn(name = "blog_id", referencedColumnName = "blog_id") // Thêm quan hệ với Blog
+    @JoinColumn(name = "blog_id", referencedColumnName = "blog_id")
     @JsonBackReference
-    Blog blog; // Thêm field blog
+    Blog blog;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id") // Tham chiếu tới cột user_id trong bảng users
+    @JsonBackReference
+    User user;
 
     @PrePersist
     public void prePersist() {

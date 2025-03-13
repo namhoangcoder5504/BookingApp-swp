@@ -8,4 +8,5 @@ import java.util.List;
 public interface ImageRepository extends JpaRepository<Image, Long> {
     List<Image> findByServiceServiceId(Long serviceId);
     List<Image> findByBlogBlogId(Long blogId);
+    List<Image> findByUserUserId(Long userId);
 }

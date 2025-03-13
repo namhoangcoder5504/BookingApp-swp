@@ -17,6 +17,7 @@ public interface SpecialistMapper {
     @Mapping(source = "address", target = "address")
     @Mapping(source = "role", target = "role")
     @Mapping(source = "status", target = "status")
+    @Mapping(target = "images", source = "images")
     @Mapping(source = "createdAt", target = "createdAt")
     @Mapping(source = "updatedAt", target = "updatedAt")
     SpecialistResponse toSpecialistResponse(User user);

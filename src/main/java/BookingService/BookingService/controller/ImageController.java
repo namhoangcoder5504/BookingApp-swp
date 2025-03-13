@@ -84,4 +84,15 @@ public class ImageController {
         List<ImageResponse> responses = imageService.getImagesByBlog(blogId);
         return ResponseEntity.ok(responses);
     }
+    @PostMapping("/users/{userId}/images")
+    public ResponseEntity<ImageResponse> createImageForUser(@PathVariable Long userId, @RequestBody ImageRequest request) {
+        ImageResponse response = imageService.createImageForUser(request, userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/users/{userId}/images")
+    public ResponseEntity<List<ImageResponse>> getImagesByUser(@PathVariable Long userId) {
+        List<ImageResponse> images = imageService.getImagesByUser(userId);
+        return ResponseEntity.ok(images);
+    }
 }

@@ -5,12 +5,14 @@ import BookingService.BookingService.dto.response.ImageResponse;
 import BookingService.BookingService.entity.Blog;
 import BookingService.BookingService.entity.Image;
 import BookingService.BookingService.entity.ServiceEntity;
+import BookingService.BookingService.entity.User;
 import BookingService.BookingService.exception.AppException;
 import BookingService.BookingService.exception.ErrorCode;
 import BookingService.BookingService.mapper.ImageMapper;
 import BookingService.BookingService.repository.BlogRepository;
 import BookingService.BookingService.repository.ImageRepository;
 import BookingService.BookingService.repository.ServiceEntityRepository;
+import BookingService.BookingService.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,9 @@ public class ImageService {
     private BlogRepository blogRepository;
 
     @Autowired
+    private UserRepository userRepository; // Thêm repository cho User
+
+    @Autowired
     private ImageMapper imageMapper;
 
     // Tạo ảnh cho service
@@ -38,7 +43,8 @@ public class ImageService {
         ServiceEntity service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new AppException(ErrorCode.SERVICE_NOT_EXISTED));
         Image image = imageMapper.toEntity(request, service);
-        image.setBlog(null); // Đảm bảo không liên kết với blog
+        image.setBlog(null);
+        image.setUser(null); // Đảm bảo không liên kết với user hoặc blog
         return imageMapper.toResponse(imageRepository.save(image));
     }
 
@@ -46,8 +52,19 @@ public class ImageService {
     public ImageResponse createImageForBlog(ImageRequest request, Long blogId) {
         Blog blog = blogRepository.findById(blogId)
                 .orElseThrow(() -> new AppException(ErrorCode.BLOG_NOT_EXISTED));
-        Image image = imageMapper.toEntity(request, null); // Không liên kết với service
+        Image image = imageMapper.toEntity(request, (ServiceEntity) null);
         image.setBlog(blog);
+        image.setUser(null); // Đảm bảo không liên kết với user
+        return imageMapper.toResponse(imageRepository.save(image));
+    }
+
+    // Tạo ảnh cho user
+    public ImageResponse createImageForUser(ImageRequest request, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        Image image = imageMapper.toEntity(request, user);
+        image.setService(null); // Đảm bảo không liên kết với service
+        image.setBlog(null); // Đảm bảo không liên kết với blog
         return imageMapper.toResponse(imageRepository.save(image));
     }
 
@@ -92,6 +109,14 @@ public class ImageService {
     // Lấy ảnh theo blogId
     public List<ImageResponse> getImagesByBlog(Long blogId) {
         return imageRepository.findByBlogBlogId(blogId)
+                .stream()
+                .map(imageMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Lấy ảnh theo userId
+    public List<ImageResponse> getImagesByUser(Long userId) {
+        return imageRepository.findByUserUserId(userId)
                 .stream()
                 .map(imageMapper::toResponse)
                 .collect(Collectors.toList());
