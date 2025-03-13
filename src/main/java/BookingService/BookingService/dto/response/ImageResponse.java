@@ -12,6 +12,8 @@ public class ImageResponse {
     private Long imageId;
     Long blogId;
     private String url;
+    Long userId;
     private LocalDateTime createdAt;
     private Long serviceId;
+
 }

@@ -6,6 +6,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id") // Thêm ánh xạ rõ ràng tới cột user_id
     Long userId;
 
     @Column(nullable = false, unique = true)
@@ -40,7 +42,8 @@ public class User {
 
     @Column(name = "status")
     private String status = "ACTIVE";
-
+    @OneToMany(mappedBy = "user") // Thêm mối quan hệ ngược với Image
+    private List<Image> images;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }
