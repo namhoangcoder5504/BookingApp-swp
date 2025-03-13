@@ -11,13 +11,17 @@ import BookingService.BookingService.exception.AppException;
 import BookingService.BookingService.service.AuthenticationService;
 import BookingService.BookingService.service.UserService;
 import com.nimbusds.jose.JOSEException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.text.ParseException;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
@@ -28,43 +32,34 @@ public class AuthenticationController {
     AuthenticationService authenticationService;
     UserService userService;
     @GetMapping("/google/success")
-    public ApiResponse<AuthenticationResponse> googleLoginSuccess(OAuth2AuthenticationToken token) {
-        // Lấy thông tin từ Google
+    public void googleLoginSuccess(OAuth2AuthenticationToken token, HttpServletResponse response) throws IOException {
         String email = token.getPrincipal().getAttribute("email");
-        String name = token.getPrincipal().getAttribute("name"); // Tên đầy đủ từ Google
-
+        String name = token.getPrincipal().getAttribute("name");
 
         User user;
         try {
             user = userService.getUserByEmail(email);
-
             if (!user.getName().equals(name)) {
                 user.setName(name);
                 user.setUpdatedAt(java.time.LocalDateTime.now());
                 userService.updateUserEntity(user);
             }
         } catch (AppException e) {
-
             user = User.builder()
                     .email(email)
-                    .name(name) // Lưu name từ Google
-                    .password("google_default_password")
-                    .role(Role.CUSTOMER) // Gán role mặc định
+                    .name(name)
+                    .password(UUID.randomUUID().toString()) // Mật khẩu ngẫu nhiên
+                    .role(Role.CUSTOMER)
                     .createdAt(java.time.LocalDateTime.now())
                     .updatedAt(java.time.LocalDateTime.now())
                     .build();
-            user = userService.saveUser(user); // Lưu user vào database
+            user = userService.saveUser(user);
         }
 
-        // Tạo JWT cho user
         String jwt = authenticationService.generateToken(user);
-
-        return ApiResponse.<AuthenticationResponse>builder()
-                .result(AuthenticationResponse.builder()
-                        .token(jwt)
-                        .authenticated(true)
-                        .build())
-                .build();
+        // Redirect về frontend với token
+        String redirectUrl = "http://localhost:5173/login?token=" + jwt;
+        response.sendRedirect(redirectUrl);
     }
     @GetMapping("/google/failure")
     public ApiResponse<String> googleLoginFailure() {
