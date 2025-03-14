@@ -31,6 +31,13 @@ public class ScheduleController {
         List<ScheduleResponse> futureBusySchedules = scheduleService.getFutureBusySchedules();
         return ResponseEntity.ok(futureBusySchedules);
     }
+
+    @GetMapping("/{specialistId}/busy")
+    public ResponseEntity<List<ScheduleResponse>> getFutureBusySchedulesBySpecialist(
+            @PathVariable Long specialistId) {
+        List<ScheduleResponse> schedules = scheduleService.getFutureBusySchedulesBySpecialist(specialistId);
+        return ResponseEntity.ok(schedules);
+    }
     @GetMapping
     public ResponseEntity<List<ScheduleResponse>> getAllSchedules() {
         List<ScheduleResponse> responseList = scheduleService.getAllSchedules()

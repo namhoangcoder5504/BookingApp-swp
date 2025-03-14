@@ -54,7 +54,8 @@ public class SecurityConfig {
             "/api/users/specialists/active",
             "/api/blogs/{id}",
             "/api/bookings/guest" ,
-            "/api/schedules/busy"
+            "/api/schedules/busy",
+            "/api/schedules/{specialistId}/busy"
     };
 
     @Value("${jwt.signerKey}")
