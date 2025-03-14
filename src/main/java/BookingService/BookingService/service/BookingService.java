@@ -454,21 +454,23 @@ public class BookingService {
     private void restorePreviousSchedule(Long specialistId, LocalDate date, String timeSlot) {
         boolean bookingExists = bookingRepository.existsBySpecialistUserIdAndBookingDateAndTimeSlot(specialistId, date, timeSlot);
         System.out.println("Booking exists (excluding CANCELLED): " + bookingExists);
+
         if (!bookingExists) {
             List<Schedule> schedules = scheduleRepository.findBySpecialistUserIdAndDate(specialistId, date);
             Optional<Schedule> oldSchedule = schedules.stream()
                     .filter(schedule -> schedule.getTimeSlot().equals(timeSlot))
                     .findFirst();
+
             if (oldSchedule.isPresent()) {
                 Schedule schedule = oldSchedule.get();
-                schedule.setAvailability(true);
-                scheduleRepository.save(schedule);
-                System.out.println("Schedule " + schedule.getScheduleId() + " restored to available");
+                // Xóa lịch thay vì cập nhật availability
+                scheduleRepository.delete(schedule);
+                System.out.println("Schedule " + schedule.getScheduleId() + " has been deleted");
             } else {
                 System.out.println("No schedule found for specialist " + specialistId + " on " + date + " with timeSlot " + timeSlot);
             }
         } else {
-            System.out.println("Cannot restore schedule due to existing active booking");
+            System.out.println("Cannot delete schedule due to existing active booking");
         }
     }
 
