@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -65,6 +66,23 @@ public class ScheduleService {
         List<Schedule> schedules = scheduleRepository.findByAvailabilityFalseAndDateGreaterThanEqual(LocalDate.now());
         return schedules.stream()
                 .map(scheduleMapper::toResponse) // Sử dụng MapStruct thay vì ánh xạ thủ công
+                .collect(Collectors.toList());
+    }
+    public List<ScheduleResponse> getFutureBusySchedulesBySpecialist(Long specialistId) {
+        User specialist = userRepository.findById(specialistId)
+                .orElseThrow(() -> new AppException(ErrorCode.SKIN_THERAPIST_NOT_EXISTED));
+
+        List<Schedule> schedules = scheduleRepository.findBySpecialistUserIdAndAvailabilityFalseAndDateGreaterThanEqual(
+                specialistId,
+                LocalDate.now()
+        );
+
+        // Sắp xếp theo ngày và thời gian
+        return schedules.stream()
+                .sorted(Comparator
+                        .comparing(Schedule::getDate)
+                        .thenComparing(Schedule::getTimeSlot))
+                .map(scheduleMapper::toResponse)
                 .collect(Collectors.toList());
     }
     public List<Schedule> getAllSchedules() {
