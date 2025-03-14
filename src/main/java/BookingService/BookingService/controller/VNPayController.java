@@ -46,6 +46,11 @@ public class VNPayController {
         List<PaymentResponse> payments = vnPayService.getAllPayments();
         return ResponseEntity.ok(payments);
     }
+    @PostMapping(value = "/cash-payment", produces = "application/json;charset=UTF-8", consumes = "application/json")
+    @PreAuthorize("hasAnyRole('USER', 'STAFF')")
+    public ApiResponse<String> processCashPayment(@RequestBody CashPaymentRequest cashRequest) {
+        return vnPayService.processCashPayment(cashRequest.getBookingId(), cashRequest.getAmount());
+    }
 }
 
 // DTO để nhận dữ liệu từ body JSON
@@ -53,4 +58,9 @@ public class VNPayController {
 class PaymentRequest {
     private BigDecimal amount; // Thay int thành BigDecimal
     private String orderInfo;
+}
+@Data
+class CashPaymentRequest {
+    private Long bookingId;
+    private BigDecimal amount;
 }

@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -147,7 +148,13 @@ public class BookingService {
     public Optional<BookingResponse> getBookingById(Long id) {
         return bookingRepository.findById(id).map(bookingMapper::toResponse);
     }
-
+    public List<BookingResponse> getConfirmedOrInProgressBookings() {
+        List<BookingStatus> statuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS);
+        List<Booking> bookings = bookingRepository.findByStatusIn(statuses);
+        return bookings.stream()
+                .map(bookingMapper::toResponse)
+                .collect(Collectors.toList());
+    }
     public List<BookingResponse> getBookingsForCurrentUser() {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(currentUserEmail)
@@ -445,7 +452,9 @@ public class BookingService {
     }
 
     private void restorePreviousSchedule(Long specialistId, LocalDate date, String timeSlot) {
-        if (!bookingRepository.existsBySpecialistUserIdAndBookingDateAndTimeSlot(specialistId, date, timeSlot)) {
+        boolean bookingExists = bookingRepository.existsBySpecialistUserIdAndBookingDateAndTimeSlot(specialistId, date, timeSlot);
+        System.out.println("Booking exists (excluding CANCELLED): " + bookingExists);
+        if (!bookingExists) {
             List<Schedule> schedules = scheduleRepository.findBySpecialistUserIdAndDate(specialistId, date);
             Optional<Schedule> oldSchedule = schedules.stream()
                     .filter(schedule -> schedule.getTimeSlot().equals(timeSlot))
@@ -454,7 +463,12 @@ public class BookingService {
                 Schedule schedule = oldSchedule.get();
                 schedule.setAvailability(true);
                 scheduleRepository.save(schedule);
+                System.out.println("Schedule " + schedule.getScheduleId() + " restored to available");
+            } else {
+                System.out.println("No schedule found for specialist " + specialistId + " on " + date + " with timeSlot " + timeSlot);
             }
+        } else {
+            System.out.println("Cannot restore schedule due to existing active booking");
         }
     }
 
@@ -727,10 +741,9 @@ public class BookingService {
         List<User> expiredGuests = userRepository.findTemporaryGuestsBefore(threshold);
 
         for (User guest : expiredGuests) {
-            // Chỉ xóa nếu không còn booking liên quan
+
             if (!userRepository.hasBookings(guest)) {
                 userRepository.delete(guest);
-//                log.info("Deleted temporary guest user: {}", guest.getEmail());
             }
         }
     }

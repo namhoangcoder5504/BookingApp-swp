@@ -5,6 +5,7 @@ import BookingService.BookingService.dto.response.PaymentResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface VNPayService {
@@ -13,5 +14,6 @@ public interface VNPayService {
     ApiResponse<String> getPaymentInfo(HttpServletRequest request);
 //    ApiResponse<TransactionResponse> getPaymentInfo(HttpServletRequest request);
 ApiResponse<String> getPaymentInfo(HttpServletRequest request, HttpServletResponse response); // Cập nhật 2 tham số
-    List<PaymentResponse> getAllPayments(); // Thêm phương thức này theo yêu cầuD
+    List<PaymentResponse> getAllPayments();
+    ApiResponse<String> processCashPayment(Long bookingId, BigDecimal amount);
 }
