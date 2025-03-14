@@ -1,5 +1,6 @@
 package BookingService.BookingService.service;
 
+import BookingService.BookingService.dto.response.ScheduleResponse;
 import BookingService.BookingService.entity.Schedule;
 import BookingService.BookingService.entity.User;
 import BookingService.BookingService.exception.AppException;
@@ -16,6 +17,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -59,7 +61,12 @@ public class ScheduleService {
 
         return scheduleRepository.save(existingSchedule);
     }
-
+    public List<ScheduleResponse> getFutureBusySchedules() {
+        List<Schedule> schedules = scheduleRepository.findByAvailabilityFalseAndDateGreaterThanEqual(LocalDate.now());
+        return schedules.stream()
+                .map(scheduleMapper::toResponse) // Sử dụng MapStruct thay vì ánh xạ thủ công
+                .collect(Collectors.toList());
+    }
     public List<Schedule> getAllSchedules() {
         return scheduleRepository.findAll();
     }

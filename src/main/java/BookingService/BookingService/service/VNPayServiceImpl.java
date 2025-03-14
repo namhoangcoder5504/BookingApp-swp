@@ -323,7 +323,97 @@
                 throw new RuntimeException("Invalid orderInfo format: " + orderInfo);
             }
         }
+        @Override
+        @Transactional
+        @PreAuthorize("hasAnyRole('STAFF')") // STAFF
+        public ApiResponse<String> processCashPayment(Long bookingId, BigDecimal amount) {
 
+            Booking booking = bookingRepository.findById(bookingId)
+                    .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_EXISTED));
+
+
+            if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
+                throw new AppException(ErrorCode.BOOKING_NOT_CHECKED_IN);
+            }
+
+            if (amount.compareTo(booking.getTotalPrice()) != 0) {
+                throw new AppException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
+            }
+
+
+            Payment payment = paymentRepository.findByBookingId(bookingId)
+                    .orElse(null);
+
+            String transactionId = "CASH_" + System.currentTimeMillis();
+
+            if (payment == null) {
+                payment = Payment.builder()
+                        .booking(booking)
+                        .amount(amount)
+                        .paymentMethod("CASH")
+                        .transactionId(transactionId)
+                        .status(PaymentStatus.SUCCESS)
+                        .paymentTime(LocalDateTime.now())
+                        .build();
+            } else {
+                if (payment.getStatus() == PaymentStatus.SUCCESS) {
+                    throw new AppException(ErrorCode.PAYMENT_NOT_COMPLETED);
+                }
+                payment.setPaymentMethod("CASH");
+                payment.setTransactionId(transactionId);
+                payment.setStatus(PaymentStatus.SUCCESS);
+                payment.setAmount(amount);
+                payment.setPaymentTime(LocalDateTime.now());
+            }
+
+            paymentRepository.save(payment);
+
+
+            booking.setPaymentStatus(PaymentStatus.SUCCESS);
+            booking.setPayment(payment);
+            bookingRepository.save(booking);
+
+
+            String customerEmail = booking.getCustomer() != null ? booking.getCustomer().getEmail() : null;
+            if (customerEmail != null && !customerEmail.isEmpty()) {
+                String subject = "Xác nhận thanh toán tiền mặt từ Beautya";
+                String htmlBody = buildCashPaymentEmail(
+                        booking.getCustomer().getName(),
+                        booking.getSpecialist() != null ? booking.getSpecialist().getName() : "Chuyên viên",
+                        transactionId,
+                        amount
+                );
+                try {
+                    emailService.sendEmail(customerEmail, subject, htmlBody);
+                } catch (Exception e) {
+                    System.err.println("Failed to send cash payment email: " + e.getMessage());
+                }
+            }
+
+            return ApiResponse.<String>builder()
+                    .message("Cash payment processed successfully")
+                    .result(transactionId)
+                    .build();
+        }
+
+
+        private String buildCashPaymentEmail(String customerName, String specialistName, String transactionId, BigDecimal totalAmount) {
+            return "<!DOCTYPE html>" +
+                    "<html><head><style>" +
+                    "body { font-family: Arial, sans-serif; color: #333; }" +
+                    ".container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; }" +
+                    ".header { background-color: #28a745; color: white; padding: 10px; text-align: center; }" +
+                    ".content { padding: 20px; background-color: white; }" +
+                    "</style></head><body>" +
+                    "<div class='container'>" +
+                    "<div class='header'><h2>Xác Nhận Thanh Toán Tiền Mặt</h2></div>" +
+                    "<div class='content'>" +
+                    "<p>Xin chào " + customerName + ",</p>" +
+                    "<p>Thanh toán tiền mặt của bạn cho chuyên viên <strong>" + specialistName + "</strong> đã được xác nhận:</p>" +
+                    "<p><strong>Mã giao dịch:</strong> " + transactionId + "</p>" +
+                    "<p><strong>Tổng số tiền:</strong> " + totalAmount + " VNĐ</p>" +
+                    "</div></div></body></html>";
+        }
         private String buildPaymentBillEmail(String customerName, String specialistName, String transactionNo, String transactionTime, BigDecimal totalAmount) {
             return "<!DOCTYPE html>" +
                     "<html><head><style>" +

@@ -12,6 +12,7 @@ public interface ScheduleMapper {
 
     ScheduleMapper INSTANCE = Mappers.getMapper(ScheduleMapper.class);
 
+
     @Mapping(source = "scheduleId", target = "scheduleId")
     @Mapping(source = "specialist.userId", target = "specialistId")
     @Mapping(source = "specialist.name", target = "specialistName")
@@ -20,6 +21,10 @@ public interface ScheduleMapper {
     @Mapping(source = "availability", target = "availability")
     ScheduleResponse toResponse(Schedule schedule);
 
+
     @Mapping(target = "specialist", ignore = true)
+    @Mapping(source = "date", target = "date")
+    @Mapping(source = "timeSlot", target = "timeSlot")
+    @Mapping(source = "availability", target = "availability")
     Schedule toEntity(ScheduleRequest request);
 }

@@ -129,10 +129,16 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
-
+    @GetMapping("/confirmed")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<List<BookingResponse>> getConfirmedOrInProgressBookings() {
+        List<BookingResponse> bookings = bookingService.getConfirmedOrInProgressBookings();
+        return ResponseEntity.ok(bookings);
+    }
     @PostMapping("/guest")
     public ResponseEntity<BookingResponse> createGuestBooking(@Valid @RequestBody BookingRequest request) {
         BookingResponse response = bookingService.createGuestBooking(request);
         return ResponseEntity.ok(response);
     }
+
 }

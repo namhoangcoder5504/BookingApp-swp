@@ -26,6 +26,11 @@ public class ScheduleController {
     private final ScheduleService scheduleService;
     private final ScheduleMapper scheduleMapper;
 
+    @GetMapping("/busy")
+    public ResponseEntity<List<ScheduleResponse>> getFutureBusySchedules() {
+        List<ScheduleResponse> futureBusySchedules = scheduleService.getFutureBusySchedules();
+        return ResponseEntity.ok(futureBusySchedules);
+    }
     @GetMapping
     public ResponseEntity<List<ScheduleResponse>> getAllSchedules() {
         List<ScheduleResponse> responseList = scheduleService.getAllSchedules()

@@ -54,7 +54,7 @@ public class SecurityConfig {
             "/api/users/specialists/active",
             "/api/blogs/{id}",
             "/api/bookings/guest" ,
-            "/api/schedules"
+            "/api/schedules/busy"
     };
 
     @Value("${jwt.signerKey}")
@@ -142,7 +142,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:5173"); // Chỉ cho phép origin này
+        configuration.addAllowedOriginPattern("http://localhost:[*]");// Chỉ cho phép origin này
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
