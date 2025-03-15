@@ -36,6 +36,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.bookingDate BETWEEN :startDate AND :endDate AND b.status = :status")
     BigDecimal sumTotalPriceByBookingDateBetweenAndStatus(LocalDate startDate, LocalDate endDate, BookingStatus status);
-
+    boolean existsBySpecialistUserIdAndBookingDateAndTimeSlotAndStatusInAndBookingIdNot(
+            Long specialistId, LocalDate bookingDate, String timeSlot, List<BookingStatus> statuses, Long excludeBookingId);
     boolean existsByCustomerAndBookingDateAndTimeSlot(User customer, LocalDate bookingDate, String timeSlot);
 }
