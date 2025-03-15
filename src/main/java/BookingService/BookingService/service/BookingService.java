@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.*;
+import java.time.DayOfWeek;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
@@ -33,13 +34,12 @@ import java.util.stream.Collectors;
 @Transactional
 public class BookingService {
 
-
     private static final int MAX_SERVICES_PER_BOOKING = 3;
     private static final long MIN_CANCEL_HOURS = 24;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final LocalTime OPENING_TIME = LocalTime.of(8, 0); // 8:00 AM
     private static final LocalTime CLOSING_TIME = LocalTime.of(20, 0); // 8:00 PM
-    private static final int MAX_BOOKING_DAYS_IN_ADVANCE = 7; // Giới hạn 7 ngày
+    private static final int MAX_BOOKING_DAYS_IN_ADVANCE = 7;
     private static final long AUTO_CANCEL_MINUTES = 30;
 
     private final BookingRepository bookingRepository;
@@ -53,6 +53,7 @@ public class BookingService {
     @Value("${beautya.feedback.link}")
     private String feedbackLink;
     private final UserService userService;
+
     // Phương thức chính (CRUD và nghiệp vụ chính)
     public BookingResponse createBooking(BookingRequest request) {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -115,7 +116,7 @@ public class BookingService {
         Booking booking = bookingMapper.toEntity(request);
         bookingMapper.setUserEntities(booking, customer, specialist);
 
-        booking.setServices(services); // Gán danh sách dịch vụ
+        booking.setServices(services);
         booking.setTotalPrice(totalPrice);
         booking.setTimeSlot(timeSlot);
         booking.setStatus(BookingStatus.PENDING);
@@ -139,6 +140,7 @@ public class BookingService {
 
         return bookingMapper.toResponse(savedBooking);
     }
+
     public List<BookingResponse> getAllBookings() {
         return bookingRepository.findAll().stream()
                 .map(bookingMapper::toResponse)
@@ -148,6 +150,7 @@ public class BookingService {
     public Optional<BookingResponse> getBookingById(Long id) {
         return bookingRepository.findById(id).map(bookingMapper::toResponse);
     }
+
     public List<BookingResponse> getConfirmedOrInProgressBookings() {
         List<BookingStatus> statuses = Arrays.asList(BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS);
         List<Booking> bookings = bookingRepository.findByStatusIn(statuses);
@@ -155,6 +158,7 @@ public class BookingService {
                 .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());
     }
+
     public List<BookingResponse> getBookingsForCurrentUser() {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(currentUserEmail)
@@ -169,6 +173,11 @@ public class BookingService {
     public BookingResponse updateBooking(Long id, BookingRequest request) {
         Booking existingBooking = bookingRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_EXISTED));
+
+        // Kiểm tra trạng thái: Chỉ cho phép update nếu là PENDING hoặc CONFIRMED
+        if (existingBooking.getStatus() != BookingStatus.PENDING && existingBooking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new AppException(ErrorCode.BOOKING_STATUS_INVALID);
+        }
 
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUserEmail = authentication.getName();
@@ -215,15 +224,17 @@ public class BookingService {
             }
             Schedule updatedSchedule = validateAndUpdateSchedule(
                     existingBooking, specialist.getUserId(), request.getBookingDate(), startTime, endTime);
+
+            // Xóa lịch cũ, loại trừ booking hiện tại
             if (!existingBooking.getBookingDate().equals(request.getBookingDate()) ||
                     !existingBooking.getTimeSlot().equals(timeSlot)) {
                 restorePreviousSchedule(existingBooking.getSpecialist().getUserId(),
-                        existingBooking.getBookingDate(), existingBooking.getTimeSlot());
+                        existingBooking.getBookingDate(), existingBooking.getTimeSlot(), id);
             }
         }
 
         bookingMapper.setUserEntities(existingBooking, customer, specialist);
-        existingBooking.setServices(services); // Cập nhật danh sách dịch vụ
+        existingBooking.setServices(services);
         existingBooking.setBookingDate(request.getBookingDate());
         existingBooking.setTimeSlot(timeSlot);
         existingBooking.setUpdatedAt(LocalDateTime.now());
@@ -247,35 +258,29 @@ public class BookingService {
         User currentUser = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
 
-        // Kiểm tra quyền: User phải là chủ booking, hoặc có vai trò cao (ADMIN/STAFF)
         if (!isHighRole(currentUser.getRole()) && !booking.getCustomer().getEmail().equalsIgnoreCase(currentUserEmail)) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
-        // Kiểm tra trạng thái booking
         if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new AppException(ErrorCode.BOOKING_CANNOT_BE_CANCELLED); // Đổi để rõ nghĩa hơn
+            throw new AppException(ErrorCode.BOOKING_CANNOT_BE_CANCELLED);
         }
 
-        // Tính thời gian bắt đầu booking
         LocalTime startTime = LocalTime.parse(booking.getTimeSlot().split("-")[0], TIME_FORMATTER);
         LocalDateTime bookingStart = LocalDateTime.of(booking.getBookingDate(), startTime);
 
-        // Điều kiện hủy theo vai trò
-        long cancelHoursLimit = isHighRole(currentUser.getRole()) ? 0 : 12; // ADMIN/STAFF: 0h, CUSTOMER: 12h
+        long cancelHoursLimit = isHighRole(currentUser.getRole()) ? 0 : 12;
         if (Duration.between(LocalDateTime.now(), bookingStart).toHours() < cancelHoursLimit) {
             throw new AppException(ErrorCode.BOOKING_CANCEL_TIME_EXPIRED);
         }
 
-        // Cập nhật trạng thái booking
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
 
-        // Khôi phục lịch của chuyên viên
-        restorePreviousSchedule(booking.getSpecialist().getUserId(), booking.getBookingDate(), booking.getTimeSlot());
+        // Xóa lịch, loại trừ booking hiện tại
+        restorePreviousSchedule(booking.getSpecialist().getUserId(), booking.getBookingDate(), booking.getTimeSlot(), bookingId);
 
-        // Gửi email xác nhận hủy
         String subject = "Xác nhận hủy đặt lịch tại Beautya";
         String htmlBody = buildCancelEmail(booking.getCustomer().getName(), booking.getSpecialist().getName(),
                 booking.getBookingDate(), booking.getTimeSlot());
@@ -284,14 +289,12 @@ public class BookingService {
                 "Bạn đã hủy lịch hẹn vào ngày " + booking.getBookingDate() +
                         ", khung giờ " + booking.getTimeSlot() + " với chuyên viên " + booking.getSpecialist().getName());
 
-        // Thông báo email cho chuyên viên
         notificationService.notifySpecialistBookingCancelled(booking);
         return bookingMapper.toResponse(booking);
     }
 
-    // Cập nhật isHighRole để chỉ bao gồm ADMIN và STAFF
     private boolean isHighRole(Role role) {
-        return role == Role.ADMIN || role == Role.STAFF; // Loại SPECIALIST ra khỏi vai trò cao
+        return role == Role.ADMIN || role == Role.STAFF;
     }
 
     public void deleteBooking(Long id) {
@@ -302,17 +305,17 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_EXISTED));
 
-        // Kiểm tra trạng thái hiện tại phải là PENDING
         if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new AppException(ErrorCode.BOOKING_STATUS_INVALID); // Hoặc mã lỗi phù hợp
+            throw new AppException(ErrorCode.BOOKING_STATUS_INVALID);
         }
 
-        booking.setStatus(BookingStatus.CONFIRMED); // Cập nhật thành CONFIRMED
+        booking.setStatus(BookingStatus.CONFIRMED);
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
 
         return bookingMapper.toResponse(booking);
     }
+
     public BookingResponse checkInBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_EXISTED));
@@ -451,9 +454,12 @@ public class BookingService {
         }
     }
 
-    private void restorePreviousSchedule(Long specialistId, LocalDate date, String timeSlot) {
-        boolean bookingExists = bookingRepository.existsBySpecialistUserIdAndBookingDateAndTimeSlot(specialistId, date, timeSlot);
-        System.out.println("Booking exists (excluding CANCELLED): " + bookingExists);
+    private void restorePreviousSchedule(Long specialistId, LocalDate date, String timeSlot, Long excludeBookingId) {
+        // Kiểm tra xem có booking nào ở trạng thái PENDING hoặc CONFIRMED (ngoại trừ bookingId được loại trừ) không
+        List<BookingStatus> activeStatuses = Arrays.asList(BookingStatus.PENDING, BookingStatus.CONFIRMED);
+        boolean bookingExists = bookingRepository.existsBySpecialistUserIdAndBookingDateAndTimeSlotAndStatusInAndBookingIdNot(
+                specialistId, date, timeSlot, activeStatuses, excludeBookingId);
+        System.out.println("Booking exists (PENDING or CONFIRMED, excluding booking ID " + excludeBookingId + "): " + bookingExists);
 
         if (!bookingExists) {
             List<Schedule> schedules = scheduleRepository.findBySpecialistUserIdAndDate(specialistId, date);
@@ -463,14 +469,13 @@ public class BookingService {
 
             if (oldSchedule.isPresent()) {
                 Schedule schedule = oldSchedule.get();
-                // Xóa lịch thay vì cập nhật availability
-                scheduleRepository.delete(schedule);
+                scheduleRepository.delete(schedule); // Xóa lịch
                 System.out.println("Schedule " + schedule.getScheduleId() + " has been deleted");
             } else {
                 System.out.println("No schedule found for specialist " + specialistId + " on " + date + " with timeSlot " + timeSlot);
             }
         } else {
-            System.out.println("Cannot delete schedule due to existing active booking");
+            System.out.println("Cannot delete schedule due to existing PENDING or CONFIRMED booking");
         }
     }
 
@@ -483,16 +488,18 @@ public class BookingService {
         return userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
     }
+
     public BigDecimal getDailyRevenue(LocalDate date) {
         return bookingRepository.sumTotalPriceByBookingDateAndStatus(
-                date != null ? date : LocalDate.now(), // Nếu không truyền ngày, dùng ngày hiện tại
+                date != null ? date : LocalDate.now(),
                 BookingStatus.COMPLETED
         );
     }
+
     public BigDecimal getWeeklyRevenue(LocalDate dateInWeek) {
         LocalDate startOfWeek = (dateInWeek != null ? dateInWeek : LocalDate.now())
-                .with(DayOfWeek.MONDAY); // Ngày đầu tuần (thứ Hai)
-        LocalDate endOfWeek = startOfWeek.plusDays(6); // Ngày cuối tuần (Chủ nhật)
+                .with(DayOfWeek.MONDAY);
+        LocalDate endOfWeek = startOfWeek.plusDays(6);
 
         return bookingRepository.sumTotalPriceByBookingDateBetweenAndStatus(
                 startOfWeek,
@@ -501,10 +508,9 @@ public class BookingService {
         );
     }
 
-    // Tính tổng doanh thu trong tháng
     public BigDecimal getMonthlyRevenue(int year, int month) {
-        LocalDate startOfMonth = LocalDate.of(year, month, 1); // Ngày đầu tháng
-        LocalDate endOfMonth = startOfMonth.withDayOfMonth(startOfMonth.lengthOfMonth()); // Ngày cuối tháng
+        LocalDate startOfMonth = LocalDate.of(year, month, 1);
+        LocalDate endOfMonth = startOfMonth.withDayOfMonth(startOfMonth.lengthOfMonth());
 
         return bookingRepository.sumTotalPriceByBookingDateBetweenAndStatus(
                 startOfMonth,
@@ -513,7 +519,6 @@ public class BookingService {
         );
     }
 
-    // Tính tổng doanh thu trong khoảng thời gian tùy chỉnh
     public BigDecimal getRevenueInRange(LocalDate startDate, LocalDate endDate) {
         if (startDate == null || endDate == null) {
             throw new AppException(ErrorCode.INVALID_DATE_RANGE);
@@ -528,12 +533,12 @@ public class BookingService {
                 BookingStatus.COMPLETED
         );
     }
+
     public List<BookingResponse> getBookingsForCurrentSpecialist() {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentSpecialist = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
 
-        // Verify the user is a specialist
         if (currentSpecialist.getRole() != Role.SPECIALIST) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
@@ -543,84 +548,64 @@ public class BookingService {
                 .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());
     }
-    @Scheduled(fixedRate = 300000) // Chạy mỗi 5 phút (300,000 ms)
+
+    @Scheduled(fixedRate = 300000) // Chạy mỗi 5 phút
     public void autoCancelPendingBookings() {
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(AUTO_CANCEL_MINUTES);
         List<Booking> pendingBookings = bookingRepository.findByStatusAndCreatedAtBefore(
                 BookingStatus.PENDING, threshold);
 
         for (Booking booking : pendingBookings) {
-            // Cập nhật trạng thái booking
             booking.setStatus(BookingStatus.CANCELLED);
             booking.setUpdatedAt(LocalDateTime.now());
             bookingRepository.save(booking);
 
-            // Khôi phục lịch của Specialist
+            // Xóa lịch, loại trừ booking hiện tại
             restorePreviousSchedule(booking.getSpecialist().getUserId(),
-                    booking.getBookingDate(),
-                    booking.getTimeSlot());
+                    booking.getBookingDate(), booking.getTimeSlot(), booking.getBookingId());
 
-            // Gửi thông báo cho khách hàng
             String subject = "Lịch hẹn của bạn đã bị hủy tự động";
             String htmlBody = buildAutoCancelEmail(booking.getCustomer().getName(),
-                    booking.getSpecialist().getName(),
-                    booking.getBookingDate(),
-                    booking.getTimeSlot());
+                    booking.getSpecialist().getName(), booking.getBookingDate(), booking.getTimeSlot());
             emailService.sendEmail(booking.getCustomer().getEmail(), subject, htmlBody);
             notificationService.createWebNotification(booking.getCustomer(),
                     "Lịch hẹn của bạn vào ngày " + booking.getBookingDate() +
                             ", khung giờ " + booking.getTimeSlot() + " đã bị hủy do quá thời gian xác nhận.");
 
-            // Thông báo cho Specialist
             notificationService.notifySpecialistBookingCancelled(booking);
         }
     }
+
     @Scheduled(cron = "0 0 1 * * ?") // Chạy lúc 1:00 AM mỗi ngày
     public void autoCancelExpiredBookings() {
-        LocalDate yesterday = LocalDate.now().minusDays(1); // Lấy ngày hôm qua
+        LocalDate yesterday = LocalDate.now().minusDays(1);
         List<Booking> expiredBookings = bookingRepository.findByBookingDateBeforeAndStatusIn(
-                yesterday,
-                List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS)
-        );
+                yesterday, List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS));
 
         for (Booking booking : expiredBookings) {
-
             booking.setStatus(BookingStatus.CANCELLED);
             booking.setUpdatedAt(LocalDateTime.now());
             bookingRepository.save(booking);
 
-
-            restorePreviousSchedule(
-                    booking.getSpecialist().getUserId(),
-                    booking.getBookingDate(),
-                    booking.getTimeSlot()
-            );
-
+            // Xóa lịch, loại trừ booking hiện tại
+            restorePreviousSchedule(booking.getSpecialist().getUserId(),
+                    booking.getBookingDate(), booking.getTimeSlot(), booking.getBookingId());
 
             String subject = "Lịch hẹn của bạn đã tự động bị hủy do hết hạn";
-            String htmlBody = buildExpiredBookingEmail(
-                    booking.getCustomer().getName(),
-                    booking.getSpecialist().getName(),
-                    booking.getBookingDate(),
-                    booking.getTimeSlot()
-            );
+            String htmlBody = buildExpiredBookingEmail(booking.getCustomer().getName(),
+                    booking.getSpecialist().getName(), booking.getBookingDate(), booking.getTimeSlot());
             emailService.sendEmail(booking.getCustomer().getEmail(), subject, htmlBody);
 
-
-            notificationService.createWebNotification(
-                    booking.getCustomer(),
+            notificationService.createWebNotification(booking.getCustomer(),
                     "Lịch hẹn của bạn vào ngày " + booking.getBookingDate() +
                             ", khung giờ " + booking.getTimeSlot() +
-                            " đã tự động bị hủy do đã qua ngày thực hiện."
-            );
-
+                            " đã tự động bị hủy do đã qua ngày thực hiện.");
 
             notificationService.notifySpecialistBookingCancelled(booking);
         }
     }
 
     public BookingResponse createGuestBooking(BookingRequest request) {
-        // Kiểm tra thông tin bắt buộc
         String customerName = request.getCustomerName();
         String customerEmail = request.getCustomerEmail();
         if (customerName == null || customerName.trim().isEmpty()) {
@@ -630,7 +615,6 @@ public class BookingService {
             throw new AppException(ErrorCode.INVALID_EMAIL);
         }
 
-        // Tạo guest user
         User guest = User.builder()
                 .email(customerEmail)
                 .name(customerName)
@@ -642,7 +626,6 @@ public class BookingService {
                 .password(null)
                 .build();
 
-        // Kiểm tra email trùng và xử lý
         try {
             guest = userService.saveUser(guest);
         } catch (AppException e) {
@@ -658,7 +641,6 @@ public class BookingService {
             }
         }
 
-        // Logic tạo booking
         List<ServiceEntity> services = serviceRepository.findAllById(request.getServiceIds());
         if (services.isEmpty()) {
             throw new AppException(ErrorCode.SERVICE_NOT_EXISTED);
@@ -725,7 +707,6 @@ public class BookingService {
         schedule.setAvailability(false);
         scheduleRepository.save(schedule);
 
-        // Gửi email xác nhận
         String subject = "Đặt lịch thành công tại Beautya!";
         String htmlBody = buildConfirmationEmail(guest.getName(), specialist.getName(), savedBooking.getBookingDate(), timeSlot, totalPrice);
         emailService.sendEmail(guest.getEmail(), subject, htmlBody);
@@ -737,19 +718,20 @@ public class BookingService {
 
         return bookingMapper.toResponse(savedBooking);
     }
+
     @Scheduled(cron = "0 0 1 * * ?") // Chạy lúc 1:00 AM mỗi ngày
     public void autoDeleteTemporaryGuests() {
-        LocalDateTime threshold = LocalDateTime.now().minusDays(1); // 24 giờ trước
+        LocalDateTime threshold = LocalDateTime.now().minusDays(1);
         List<User> expiredGuests = userRepository.findTemporaryGuestsBefore(threshold);
 
         for (User guest : expiredGuests) {
-
             if (!userRepository.hasBookings(guest)) {
                 userRepository.delete(guest);
             }
         }
     }
 
+    // Các phương thức xây dựng email
     private String buildExpiredBookingEmail(String customerName, String specialistName, LocalDate bookingDate, String timeSlot) {
         return "<!DOCTYPE html>" +
                 "<html><head><style>" +
@@ -771,6 +753,7 @@ public class BookingService {
                 "<div class='footer'>© 2025 Beautya. All rights reserved.</div>" +
                 "</div></body></html>";
     }
+
     private String buildAutoCancelEmail(String customerName, String specialistName, LocalDate bookingDate, String timeSlot) {
         return "<!DOCTYPE html>" +
                 "<html><head><style>" +
@@ -789,7 +772,7 @@ public class BookingService {
                 "<p>Vui lòng đặt lại lịch nếu cần!</p>" +
                 "</div></div></body></html>";
     }
-    // Phương thức xây dựng email
+
     private String buildConfirmationEmail(String customerName, String specialistName, LocalDate bookingDate, String timeSlot, BigDecimal totalPrice) {
         return "<!DOCTYPE html>" +
                 "<html><head><style>" +
