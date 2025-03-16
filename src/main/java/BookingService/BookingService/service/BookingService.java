@@ -193,7 +193,9 @@ public class BookingService {
         LocalTime startTime = LocalTime.parse(request.getStartTime(), TIME_FORMATTER);
         LocalTime endTime = startTime.plusMinutes(totalDuration);
         String timeSlot = request.getStartTime() + "-" + endTime.format(TIME_FORMATTER);
-
+        if (startTime.isBefore(OPENING_TIME) || endTime.isAfter(CLOSING_TIME)) {
+            throw new AppException(ErrorCode.TIME_SLOT_OUTSIDE_WORKING_HOURS);
+        }
         LocalDateTime bookingDateTime = LocalDateTime.of(request.getBookingDate(), startTime);
         if (bookingDateTime.isBefore(LocalDateTime.now())) {
             throw new AppException(ErrorCode.BOOKING_DATE_IN_PAST);
@@ -232,10 +234,14 @@ public class BookingService {
                         existingBooking.getBookingDate(), existingBooking.getTimeSlot(), id);
             }
         }
+        BigDecimal totalPrice = services.stream()
+                .map(ServiceEntity::getPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         bookingMapper.setUserEntities(existingBooking, customer, specialist);
         existingBooking.setServices(services);
         existingBooking.setBookingDate(request.getBookingDate());
+        existingBooking.setTotalPrice(totalPrice);
         existingBooking.setTimeSlot(timeSlot);
         existingBooking.setUpdatedAt(LocalDateTime.now());
 
