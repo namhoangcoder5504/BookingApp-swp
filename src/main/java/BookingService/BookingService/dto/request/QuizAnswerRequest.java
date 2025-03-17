@@ -1,5 +1,6 @@
 package BookingService.BookingService.dto.request;
 
+import BookingService.BookingService.enums.SkinType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
@@ -11,4 +12,6 @@ public class QuizAnswerRequest {
 
     @Min(value = 0, message = "Score must be non-negative")
     private int score;
+
+    private SkinType skinType; // Thêm trường skinType
 }

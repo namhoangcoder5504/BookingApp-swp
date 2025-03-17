@@ -53,8 +53,6 @@ public class QuizController {
         return "Quiz questions and answers have been added!";
     }
 
-    // --- CRUD endpoints cho QuizQuestion ---
-
     @PostMapping("/questions")
     public ResponseEntity<QuizQuestionResponse> createQuestion(
             @Valid @RequestBody QuizQuestionRequest request) {
