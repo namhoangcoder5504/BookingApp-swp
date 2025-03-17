@@ -1,5 +1,6 @@
 package BookingService.BookingService.entity;
 
+import BookingService.BookingService.enums.SkinType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,7 +18,10 @@ public class QuizAnswer {
 
     private String answer;
 
-    private int score; // Điểm số cho loại da khi chọn câu trả lời này
+    private int score;
+
+    @Enumerated(EnumType.STRING)
+    private SkinType skinType;
 
     @ManyToOne
     @JoinColumn(name = "question_id")

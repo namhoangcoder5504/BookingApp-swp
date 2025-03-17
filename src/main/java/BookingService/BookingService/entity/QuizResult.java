@@ -3,6 +3,7 @@ package BookingService.BookingService.entity;
 import BookingService.BookingService.enums.SkinType;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -22,9 +23,9 @@ public class QuizResult {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    private SkinType detectedSkinType; // Loại da được phát hiện
+    private SkinType detectedSkinType;
 
-    private String recommendedService; // Dịch vụ gợi ý
+    private String recommendedService;
 
     private LocalDateTime createdAt;
 }

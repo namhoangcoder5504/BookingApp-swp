@@ -92,6 +92,10 @@ public class QuizService {
     }
 
     private SkinType determineSkinTypeFromAnswer(QuizAnswer answer) {
+        if (answer.getSkinType() != null) {
+            return answer.getSkinType();
+        }
+
         String answerText = answer.getAnswer();
         String questionText = answer.getQuestion().getQuestion();
 
@@ -179,63 +183,326 @@ public class QuizService {
             return;
         }
 
-        List<QuizQuestion> questions = List.of(
-                new QuizQuestion(null, "Da bạn có thường xuyên bị bóng dầu không?", null),
-                new QuizQuestion(null, "Bạn cảm thấy da mình thế nào sau khi rửa mặt?", null),
-                new QuizQuestion(null, "Bạn có dễ bị mụn không?", null),
-                new QuizQuestion(null, "Lỗ chân lông của bạn có kích thước thế nào?", null),
-                new QuizQuestion(null, "Da bạn có bị bong tróc không?", null),
-                new QuizQuestion(null, "Bạn có dễ bị kích ứng, đỏ da không?", null),
-                new QuizQuestion(null, "Khi bạn thử sản phẩm dưỡng da mới, da bạn phản ứng thế nào?", null),
-                new QuizQuestion(null, "Bạn có thấy da mình thay đổi theo thời tiết không?", null),
-                new QuizQuestion(null, "Bạn có cần dưỡng ẩm hàng ngày không?", null),
-                new QuizQuestion(null, "Sau 6 tiếng không rửa mặt, da bạn trông thế nào?", null)
-        );
+        // Tạo danh sách câu hỏi
+        List<QuizQuestion> questions = new ArrayList<>();
+        questions.add(new QuizQuestion(null, "Da bạn có thường xuyên bị bóng dầu không?"));
+        questions.add(new QuizQuestion(null, "Bạn cảm thấy da mình thế nào sau khi rửa mặt?"));
+        questions.add(new QuizQuestion(null, "Bạn có dễ bị mụn không?"));
+        questions.add(new QuizQuestion(null, "Lỗ chân lông của bạn có kích thước thế nào?"));
+        questions.add(new QuizQuestion(null, "Da bạn có bị bong tróc không?"));
+        questions.add(new QuizQuestion(null, "Bạn có dễ bị kích ứng, đỏ da không?"));
+        questions.add(new QuizQuestion(null, "Khi bạn thử sản phẩm dưỡng da mới, da bạn phản ứng thế nào?"));
+        questions.add(new QuizQuestion(null, "Bạn có thấy da mình thay đổi theo thời tiết không?"));
+        questions.add(new QuizQuestion(null, "Bạn có cần dưỡng ẩm hàng ngày không?"));
+        questions.add(new QuizQuestion(null, "Sau 6 tiếng không rửa mặt, da bạn trông thế nào?"));
 
-        quizQuestionRepository.saveAll(questions);
+        // Lưu danh sách câu hỏi vào cơ sở dữ liệu
+        List<QuizQuestion> savedQuestions = quizQuestionRepository.saveAll(questions);
 
-        List<QuizAnswer> answers = List.of(
-                new QuizAnswer(null, "Luôn luôn", 3, questions.get(0)),
-                new QuizAnswer(null, "Thỉnh thoảng", 2, questions.get(0)),
-                new QuizAnswer(null, "Hiếm khi", 1, questions.get(0)),
-                new QuizAnswer(null, "Không bao giờ", 0, questions.get(0)),
-                new QuizAnswer(null, "Căng rát", 3, questions.get(1)),
-                new QuizAnswer(null, "Mềm mại, không khó chịu", 2, questions.get(1)),
-                new QuizAnswer(null, "Dầu xuất hiện sau vài giờ", 3, questions.get(1)),
-                new QuizAnswer(null, "Khô ở một số vùng, dầu ở vùng khác", 2, questions.get(1)),
-                new QuizAnswer(null, "Thường xuyên", 3, questions.get(2)),
-                new QuizAnswer(null, "Đôi khi, vào những thời điểm nhất định", 2, questions.get(2)),
-                new QuizAnswer(null, "Rất hiếm", 1, questions.get(2)),
-                new QuizAnswer(null, "Hầu như không bao giờ", 0, questions.get(2)),
-                new QuizAnswer(null, "To và dễ thấy", 3, questions.get(3)),
-                new QuizAnswer(null, "Nhỏ nhưng rõ ràng ở vùng chữ T", 2, questions.get(3)),
-                new QuizAnswer(null, "Nhỏ, khó thấy", 1, questions.get(3)),
-                new QuizAnswer(null, "Rất nhỏ hoặc không thấy", 0, questions.get(3)),
-                new QuizAnswer(null, "Thường xuyên", 3, questions.get(4)),
-                new QuizAnswer(null, "Đôi khi vào mùa đông", 2, questions.get(4)),
-                new QuizAnswer(null, "Không bao giờ", 0, questions.get(4)),
-                new QuizAnswer(null, "Chỉ ở một số vùng", 2, questions.get(4)),
-                new QuizAnswer(null, "Rất dễ", 3, questions.get(5)),
-                new QuizAnswer(null, "Thỉnh thoảng", 2, questions.get(5)),
-                new QuizAnswer(null, "Hiếm khi", 1, questions.get(5)),
-                new QuizAnswer(null, "Gần như không bao giờ", 0, questions.get(5)),
-                new QuizAnswer(null, "Dễ bị kích ứng, đỏ", 3, questions.get(6)),
-                new QuizAnswer(null, "Cần thời gian thích nghi", 2, questions.get(6)),
-                new QuizAnswer(null, "Không có phản ứng", 1, questions.get(6)),
-                new QuizAnswer(null, "Chỉ phản ứng với một số thành phần", 2, questions.get(6)),
-                new QuizAnswer(null, "Rất nhạy cảm với thời tiết", 3, questions.get(7)),
-                new QuizAnswer(null, "Chỉ thay đổi nhẹ", 2, questions.get(7)),
-                new QuizAnswer(null, "Mùa hè nhiều dầu, mùa đông khô", 3, questions.get(7)),
-                new QuizAnswer(null, "Không ảnh hưởng nhiều", 1, questions.get(7)),
-                new QuizAnswer(null, "Không thể thiếu", 3, questions.get(8)),
-                new QuizAnswer(null, "Cần nhưng không nhiều", 2, questions.get(8)),
-                new QuizAnswer(null, "Chỉ vùng khô", 2, questions.get(8)),
-                new QuizAnswer(null, "Không cần hoặc rất ít", 1, questions.get(8)),
-                new QuizAnswer(null, "Rất dầu, bóng nhờn", 3, questions.get(9)),
-                new QuizAnswer(null, "Dầu ở vùng chữ T", 2, questions.get(9)),
-                new QuizAnswer(null, "Bình thường", 2, questions.get(9)),
-                new QuizAnswer(null, "Căng khô", 3, questions.get(9))
-        );
+
+
+        // Tạo danh sách đáp án
+        List<QuizAnswer> answers = new ArrayList<>();
+
+        // Câu 1: "Da bạn có thường xuyên bị bóng dầu không?"
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Luôn luôn")
+                .score(3)
+                .question(savedQuestions.get(0))
+                .skinType(SkinType.OILY)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Thỉnh thoảng")
+                .score(2)
+                .question(savedQuestions.get(0))
+                .skinType(SkinType.COMBINATION)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Hiếm khi")
+                .score(1)
+                .question(savedQuestions.get(0))
+                .skinType(SkinType.NORMAL)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Không bao giờ")
+                .score(0)
+                .question(savedQuestions.get(0))
+                .skinType(SkinType.DRY)
+                .build());
+
+        // Câu 2: "Bạn cảm thấy da mình thế nào sau khi rửa mặt?"
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Căng rát")
+                .score(3)
+                .question(savedQuestions.get(1))
+                .skinType(SkinType.DRY)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Mềm mại, không khó chịu")
+                .score(2)
+                .question(savedQuestions.get(1))
+                .skinType(SkinType.NORMAL)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Dầu xuất hiện sau vài giờ")
+                .score(3)
+                .question(savedQuestions.get(1))
+                .skinType(SkinType.OILY)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Khô ở một số vùng, dầu ở vùng khác")
+                .score(2)
+                .question(savedQuestions.get(1))
+                .skinType(SkinType.COMBINATION)
+                .build());
+
+        // Câu 3: "Bạn có dễ bị mụn không?"
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Thường xuyên")
+                .score(3)
+                .question(savedQuestions.get(2))
+                .skinType(SkinType.OILY)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Đôi khi, vào những thời điểm nhất định")
+                .score(2)
+                .question(savedQuestions.get(2))
+                .skinType(SkinType.COMBINATION)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Rất hiếm")
+                .score(1)
+                .question(savedQuestions.get(2))
+                .skinType(SkinType.NORMAL)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Hầu như không bao giờ")
+                .score(0)
+                .question(savedQuestions.get(2))
+                .skinType(SkinType.DRY)
+                .build());
+
+        // Câu 4: "Lỗ chân lông của bạn có kích thước thế nào?"
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("To và dễ thấy")
+                .score(3)
+                .question(savedQuestions.get(3))
+                .skinType(SkinType.OILY)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Nhỏ nhưng rõ ràng ở vùng chữ T")
+                .score(2)
+                .question(savedQuestions.get(3))
+                .skinType(SkinType.COMBINATION)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Nhỏ, khó thấy")
+                .score(1)
+                .question(savedQuestions.get(3))
+                .skinType(SkinType.NORMAL)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Rất nhỏ hoặc không thấy")
+                .score(0)
+                .question(savedQuestions.get(3))
+                .skinType(SkinType.DRY)
+                .build());
+
+        // Câu 5: "Da bạn có bị bong tróc không?"
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Thường xuyên")
+                .score(3)
+                .question(savedQuestions.get(4))
+                .skinType(SkinType.DRY)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Đôi khi vào mùa đông")
+                .score(2)
+                .question(savedQuestions.get(4))
+                .skinType(SkinType.NORMAL)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Không bao giờ")
+                .score(0)
+                .question(savedQuestions.get(4))
+                .skinType(SkinType.OILY)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Chỉ ở một số vùng")
+                .score(2)
+                .question(savedQuestions.get(4))
+                .skinType(SkinType.COMBINATION)
+                .build());
+
+        // Câu 6: "Bạn có dễ bị kích ứng, đỏ da không?"
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Rất dễ")
+                .score(3)
+                .question(savedQuestions.get(5))
+                .skinType(SkinType.SENSITIVE)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Thỉnh thoảng")
+                .score(2)
+                .question(savedQuestions.get(5))
+                .skinType(SkinType.NORMAL)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Hiếm khi")
+                .score(1)
+                .question(savedQuestions.get(5))
+                .skinType(SkinType.OILY)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Gần như không bao giờ")
+                .score(0)
+                .question(savedQuestions.get(5))
+                .skinType(SkinType.COMBINATION)
+                .build());
+
+        // Câu 7: "Khi bạn thử sản phẩm dưỡng da mới, da bạn phản ứng thế nào?"
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Dễ bị kích ứng, đỏ")
+                .score(3)
+                .question(savedQuestions.get(6))
+                .skinType(SkinType.SENSITIVE)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Cần thời gian thích nghi")
+                .score(2)
+                .question(savedQuestions.get(6))
+                .skinType(SkinType.NORMAL)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Không có phản ứng")
+                .score(1)
+                .question(savedQuestions.get(6))
+                .skinType(SkinType.OILY)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Chỉ phản ứng với một số thành phần")
+                .score(2)
+                .question(savedQuestions.get(6))
+                .skinType(SkinType.COMBINATION)
+                .build());
+
+        // Câu 8: "Bạn có thấy da mình thay đổi theo thời tiết không?"
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Rất nhạy cảm với thời tiết")
+                .score(3)
+                .question(savedQuestions.get(7))
+                .skinType(SkinType.SENSITIVE)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Chỉ thay đổi nhẹ")
+                .score(2)
+                .question(savedQuestions.get(7))
+                .skinType(SkinType.NORMAL)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Mùa hè nhiều dầu, mùa đông khô")
+                .score(3)
+                .question(savedQuestions.get(7))
+                .skinType(SkinType.COMBINATION)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Không ảnh hưởng nhiều")
+                .score(1)
+                .question(savedQuestions.get(7))
+                .skinType(SkinType.OILY)
+                .build());
+
+        // Câu 9: "Bạn có cần dưỡng ẩm hàng ngày không?"
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Không thể thiếu")
+                .score(3)
+                .question(savedQuestions.get(8))
+                .skinType(SkinType.DRY)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Cần nhưng không nhiều")
+                .score(2)
+                .question(savedQuestions.get(8))
+                .skinType(SkinType.NORMAL)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Chỉ vùng khô")
+                .score(2)
+                .question(savedQuestions.get(8))
+                .skinType(SkinType.COMBINATION)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Không cần hoặc rất ít")
+                .score(1)
+                .question(savedQuestions.get(8))
+                .skinType(SkinType.OILY)
+                .build());
+
+        // Câu 10: "Sau 6 tiếng không rửa mặt, da bạn trông thế nào?"
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Rất dầu, bóng nhờn")
+                .score(3)
+                .question(savedQuestions.get(9))
+                .skinType(SkinType.OILY)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Dầu ở vùng chữ T")
+                .score(2)
+                .question(savedQuestions.get(9))
+                .skinType(SkinType.COMBINATION)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Bình thường")
+                .score(2)
+                .question(savedQuestions.get(9))
+                .skinType(SkinType.NORMAL)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .id(null)
+                .answer("Căng khô")
+                .score(3)
+                .question(savedQuestions.get(9))
+                .skinType(SkinType.DRY)
+                .build());
 
         quizAnswerRepository.saveAll(answers);
     }
@@ -263,6 +530,7 @@ public class QuizService {
                                 answerData.put("answerId", answer.getId());
                                 answerData.put("answerText", answer.getAnswer());
                                 answerData.put("score", answer.getScore());
+                                answerData.put("skinType", answer.getSkinType().toString());
                                 return answerData;
                             })
                             .collect(Collectors.toList());
@@ -293,8 +561,6 @@ public class QuizService {
         return serviceEntityService.getServicesBySkinType(detectedSkinType);
     }
 
-    // --- CRUD cho QuizQuestion ---
-
     public QuizQuestionResponse createQuestion(QuizQuestionRequest request) {
         if (request.getAnswers() == null || request.getAnswers().size() != 4) {
             throw new AppException(ErrorCode.INVALID_INPUT);
@@ -302,24 +568,25 @@ public class QuizService {
 
         QuizQuestion quizQuestion = QuizQuestion.builder()
                 .question(request.getQuestionText())
-                .skinType(request.getSkinType())
                 .build();
         QuizQuestion savedQuestion = quizQuestionRepository.save(quizQuestion);
 
         List<QuizAnswer> answers = request.getAnswers().stream().map(answerRequest -> {
-            QuizAnswer quizAnswer = QuizAnswer.builder()
+            if (answerRequest.getSkinType() == null) {
+                throw new AppException(ErrorCode.INVALID_INPUT);
+            }
+            return QuizAnswer.builder()
                     .answer(answerRequest.getAnswerText())
                     .score(answerRequest.getScore())
+                    .skinType(answerRequest.getSkinType())
                     .question(savedQuestion)
                     .build();
-            return quizAnswer;
         }).collect(Collectors.toList());
         quizAnswerRepository.saveAll(answers);
 
         QuizQuestionResponse response = new QuizQuestionResponse();
         response.setId(savedQuestion.getId());
         response.setQuestionText(savedQuestion.getQuestion());
-        response.setSkinType(savedQuestion.getSkinType());
 
         List<QuizAnswerResponse> answerResponses = answers.stream().map(answer -> {
             QuizAnswerResponse answerResponse = new QuizAnswerResponse();
@@ -339,7 +606,6 @@ public class QuizService {
                     QuizQuestionResponse response = new QuizQuestionResponse();
                     response.setId(question.getId());
                     response.setQuestionText(question.getQuestion());
-                    response.setSkinType(question.getSkinType());
 
                     List<QuizAnswer> answers = quizAnswerRepository.findByQuestion(question);
                     List<QuizAnswerResponse> answerResponses = answers.stream().map(answer -> {
@@ -363,7 +629,6 @@ public class QuizService {
         QuizQuestionResponse response = new QuizQuestionResponse();
         response.setId(question.getId());
         response.setQuestionText(question.getQuestion());
-        response.setSkinType(question.getSkinType());
 
         List<QuizAnswer> answers = quizAnswerRepository.findByQuestion(question);
         List<QuizAnswerResponse> answerResponses = answers.stream().map(answer -> {
@@ -383,26 +648,27 @@ public class QuizService {
                 .orElseThrow(() -> new AppException(ErrorCode.QUIZ_QUESTION_NOT_FOUND));
 
         quizQuestion.setQuestion(request.getQuestionText());
-        quizQuestion.setSkinType(request.getSkinType());
         QuizQuestion updatedQuestion = quizQuestionRepository.save(quizQuestion);
 
         List<QuizAnswer> existingAnswers = quizAnswerRepository.findByQuestion(quizQuestion);
         quizAnswerRepository.deleteAll(existingAnswers);
 
         List<QuizAnswer> newAnswers = request.getAnswers().stream().map(answerRequest -> {
-            QuizAnswer quizAnswer = QuizAnswer.builder()
+            if (answerRequest.getSkinType() == null) {
+                throw new AppException(ErrorCode.INVALID_INPUT);
+            }
+            return QuizAnswer.builder()
                     .answer(answerRequest.getAnswerText())
                     .score(answerRequest.getScore())
+                    .skinType(answerRequest.getSkinType())
                     .question(updatedQuestion)
                     .build();
-            return quizAnswer;
         }).collect(Collectors.toList());
         quizAnswerRepository.saveAll(newAnswers);
 
         QuizQuestionResponse response = new QuizQuestionResponse();
         response.setId(updatedQuestion.getId());
         response.setQuestionText(updatedQuestion.getQuestion());
-        response.setSkinType(updatedQuestion.getSkinType());
 
         List<QuizAnswerResponse> answerResponses = newAnswers.stream().map(answer -> {
             QuizAnswerResponse answerResponse = new QuizAnswerResponse();

@@ -9,6 +9,6 @@ import java.util.List;
 public class QuizQuestionResponse {
     private Long id;
     private String questionText;
-    private SkinType skinType;
-    private List<QuizAnswerResponse> answers; // Thêm danh sách đáp án
+//    private SkinType skinType; // Có thể để null nếu không cần
+    private List<QuizAnswerResponse> answers;
 }
