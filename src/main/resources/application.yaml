@@ -45,7 +45,7 @@ jwt:
 
 beautya:
   feedback:
-    link: http://localhost:8080/BookingService/api/feedbacks
+    link: https://e8e8-118-69-182-149.ngrok-free.app/BookingService/api/feedbacks
 
 springdoc:
   api-docs:
