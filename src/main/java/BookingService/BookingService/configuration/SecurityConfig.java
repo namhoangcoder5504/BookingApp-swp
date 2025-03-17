@@ -141,16 +141,21 @@ public class SecurityConfig {
                 .servers(List.of(new Server().url("https://f084-118-69-182-149.ngrok-free.app")));
     }
 
-    @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOriginPattern("http://localhost:[*]");// Chỉ cho phép origin này
-        configuration.addAllowedMethod("*");
-        configuration.addAllowedHeader("*");
-        configuration.setAllowCredentials(true);
+        // Cho phép origin của frontend deploy
+        configuration.addAllowedOrigin("https://swp-391-project-eta.vercel.app");
+        // Nếu bạn vẫn muốn giữ localhost cho môi trường dev
+        configuration.addAllowedOriginPattern("http://localhost:[*]");
+        // Hoặc dùng wildcard để cho phép tất cả (không khuyến khích trong production)
+        // configuration.addAllowedOrigin("*");
+
+        configuration.addAllowedMethod("*"); // Cho phép tất cả các phương thức (GET, POST, PUT, v.v.)
+        configuration.addAllowedHeader("*"); // Cho phép tất cả các header
+        configuration.setAllowCredentials(true); // Cho phép gửi cookie/credentials
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", configuration); // Áp dụng cho tất cả các endpoint
         return source;
     }
 }
