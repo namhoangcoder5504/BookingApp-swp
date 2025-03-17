@@ -138,7 +138,7 @@ public class SecurityConfig {
                         .title("Booking Service API")
                         .version("1.0")
                         .description("Documentation for Booking Service API"))
-                .servers(List.of(new Server().url("https://e8e8-118-69-182-149.ngrok-free.app")));
+                .servers(List.of(new Server().url("https://f084-118-69-182-149.ngrok-free.app")));
     }
 
     @Bean
