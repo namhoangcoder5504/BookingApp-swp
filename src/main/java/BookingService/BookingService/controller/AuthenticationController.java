@@ -48,7 +48,7 @@ public class AuthenticationController {
             user = User.builder()
                     .email(email)
                     .name(name)
-                    .password(UUID.randomUUID().toString())
+                    .password(UUID.randomUUID().toString()) // Mật khẩu ngẫu nhiên
                     .role(Role.CUSTOMER)
                     .createdAt(java.time.LocalDateTime.now())
                     .updatedAt(java.time.LocalDateTime.now())
@@ -57,10 +57,10 @@ public class AuthenticationController {
         }
 
         String jwt = authenticationService.generateToken(user);
-        String redirectUrl = "https://swp-391-project-eta.vercel.app/login?token=" + jwt;
+        // Redirect về frontend với token
+        String redirectUrl = "https://test-deploy-sigma-sand.vercel.app/login?token=" + jwt;
         response.sendRedirect(redirectUrl);
     }
-
     @GetMapping("/google/failure")
     public ApiResponse<String> googleLoginFailure() {
         return ApiResponse.<String>builder()

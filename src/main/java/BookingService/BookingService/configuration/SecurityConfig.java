@@ -138,13 +138,14 @@ public class SecurityConfig {
                         .title("Booking Service API")
                         .version("1.0")
                         .description("Documentation for Booking Service API"))
-                .servers(List.of(new Server().url("https://f084-118-69-182-149.ngrok-free.app")));
+                .servers(List.of(new Server().url("https://9c6d-2405-4802-811e-11a0-9cec-41b0-ca2f-57a6.ngrok-free.app")));
     }
 
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Cho phép origin của frontend deploy
         configuration.addAllowedOrigin("https://swp-391-project-eta.vercel.app");
+        configuration.addAllowedOrigin("https://test-deploy-sigma-sand.vercel.app");
         // Nếu bạn vẫn muốn giữ localhost cho môi trường dev
         configuration.addAllowedOriginPattern("http://localhost:[*]");
         // Hoặc dùng wildcard để cho phép tất cả (không khuyến khích trong production)
