@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class Test {
     @GetMapping("/test")
     public String test() {
-        return "This is BookingApp, not Petstore!";
+        return "SWT-1: Added test endpoint for IntelliJ integration";
     }
 }

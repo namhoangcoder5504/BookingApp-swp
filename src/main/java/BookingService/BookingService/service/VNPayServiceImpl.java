@@ -42,8 +42,8 @@
         PaymentRepository paymentRepository;
         EmailService emailService;
 
-        private static final String DEFAULT_SUCCESS_REDIRECT_URL = "https://test-deploy-sigma-sand.vercel.app/mybooking";
-        private static final String DEFAULT_FAILED_REDIRECT_URL = "https://test-deploy-sigma-sand.vercel.app/mybooking";
+        private static final String DEFAULT_SUCCESS_REDIRECT_URL = "http://localhost:5174/mybooking";
+        private static final String DEFAULT_FAILED_REDIRECT_URL = "http://localhost:5174/mybooking";
 
         @Override
         @Transactional
