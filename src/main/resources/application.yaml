@@ -32,7 +32,7 @@ spring:
             scope:
               - email
               - profile
-            redirect-uri: "https://1728-2405-4802-811e-11a0-9cec-41b0-ca2f-57a6.ngrok-free.app/login/oauth2/code/google"  # Added redirect-uri
+            redirect-uri: " https://62dd-2402-800-78d0-a832-503e-9ecd-54a8-3bb0.ngrok-free.app/login/oauth2/code/google"  # Added redirect-uri
         provider:
           google:
             authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
