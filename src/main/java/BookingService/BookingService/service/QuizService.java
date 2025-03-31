@@ -105,72 +105,72 @@ public class QuizService {
                 case "Thỉnh thoảng" -> SkinType.COMBINATION;
                 case "Hiếm khi" -> SkinType.NORMAL;
                 case "Không bao giờ" -> SkinType.DRY;
-                default -> throw new IllegalArgumentException("Unknown answer: " + answerText);
+                default -> throw new IllegalArgumentException("Đáp án không hợp lệ: " + answerText);
             };
             case "Bạn cảm thấy da mình thế nào sau khi rửa mặt?" -> switch (answerText) {
                 case "Căng rát" -> SkinType.DRY;
                 case "Mềm mại, không khó chịu" -> SkinType.NORMAL;
                 case "Dầu xuất hiện sau vài giờ" -> SkinType.OILY;
                 case "Khô ở một số vùng, dầu ở vùng khác" -> SkinType.COMBINATION;
-                default -> throw new IllegalArgumentException("Unknown answer: " + answerText);
+                default -> throw new IllegalArgumentException("Đáp án không hợp lệ: " + answerText);
             };
             case "Bạn có dễ bị mụn không?" -> switch (answerText) {
                 case "Thường xuyên" -> SkinType.OILY;
                 case "Đôi khi, vào những thời điểm nhất định" -> SkinType.COMBINATION;
                 case "Rất hiếm" -> SkinType.NORMAL;
                 case "Hầu như không bao giờ" -> SkinType.DRY;
-                default -> throw new IllegalArgumentException("Unknown answer: " + answerText);
+                default -> throw new IllegalArgumentException("Đáp án không hợp lệ: " + answerText);
             };
             case "Lỗ chân lông của bạn có kích thước thế nào?" -> switch (answerText) {
                 case "To và dễ thấy" -> SkinType.OILY;
                 case "Nhỏ nhưng rõ ràng ở vùng chữ T" -> SkinType.COMBINATION;
                 case "Nhỏ, khó thấy" -> SkinType.NORMAL;
                 case "Rất nhỏ hoặc không thấy" -> SkinType.DRY;
-                default -> throw new IllegalArgumentException("Unknown answer: " + answerText);
+                default -> throw new IllegalArgumentException("Đáp án không hợp lệ: " + answerText);
             };
             case "Da bạn có bị bong tróc không?" -> switch (answerText) {
                 case "Thường xuyên" -> SkinType.DRY;
                 case "Đôi khi vào mùa đông" -> SkinType.NORMAL;
                 case "Không bao giờ" -> SkinType.OILY;
                 case "Chỉ ở một số vùng" -> SkinType.COMBINATION;
-                default -> throw new IllegalArgumentException("Unknown answer: " + answerText);
+                default -> throw new IllegalArgumentException("Đáp án không hợp lệ: " + answerText);
             };
             case "Bạn có dễ bị kích ứng, đỏ da không?" -> switch (answerText) {
                 case "Rất dễ" -> SkinType.SENSITIVE;
                 case "Thỉnh thoảng" -> SkinType.NORMAL;
                 case "Hiếm khi" -> SkinType.OILY;
                 case "Gần như không bao giờ" -> SkinType.COMBINATION;
-                default -> throw new IllegalArgumentException("Unknown answer: " + answerText);
+                default -> throw new IllegalArgumentException("Đáp án không hợp lệ: " + answerText);
             };
             case "Khi bạn thử sản phẩm dưỡng da mới, da bạn phản ứng thế nào?" -> switch (answerText) {
                 case "Dễ bị kích ứng, đỏ" -> SkinType.SENSITIVE;
                 case "Cần thời gian thích nghi" -> SkinType.NORMAL;
                 case "Không có phản ứng" -> SkinType.OILY;
                 case "Chỉ phản ứng với một số thành phần" -> SkinType.COMBINATION;
-                default -> throw new IllegalArgumentException("Unknown answer: " + answerText);
+                default -> throw new IllegalArgumentException("Đáp án không hợp lệ: " + answerText);
             };
             case "Bạn có thấy da mình thay đổi theo thời tiết không?" -> switch (answerText) {
                 case "Rất nhạy cảm với thời tiết" -> SkinType.SENSITIVE;
                 case "Chỉ thay đổi nhẹ" -> SkinType.NORMAL;
                 case "Mùa hè nhiều dầu, mùa đông khô" -> SkinType.COMBINATION;
                 case "Không ảnh hưởng nhiều" -> SkinType.OILY;
-                default -> throw new IllegalArgumentException("Unknown answer: " + answerText);
+                default -> throw new IllegalArgumentException("Đáp án không hợp lệ: " + answerText);
             };
             case "Bạn có cần dưỡng ẩm hàng ngày không?" -> switch (answerText) {
                 case "Không thể thiếu" -> SkinType.DRY;
                 case "Cần nhưng không nhiều" -> SkinType.NORMAL;
                 case "Chỉ vùng khô" -> SkinType.COMBINATION;
                 case "Không cần hoặc rất ít" -> SkinType.OILY;
-                default -> throw new IllegalArgumentException("Unknown answer: " + answerText);
+                default -> throw new IllegalArgumentException("Đáp án không hợp lệ: " + answerText);
             };
             case "Sau 6 tiếng không rửa mặt, da bạn trông thế nào?" -> switch (answerText) {
                 case "Rất dầu, bóng nhờn" -> SkinType.OILY;
                 case "Dầu ở vùng chữ T" -> SkinType.COMBINATION;
                 case "Bình thường" -> SkinType.NORMAL;
                 case "Căng khô" -> SkinType.DRY;
-                default -> throw new IllegalArgumentException("Unknown answer: " + answerText);
+                default -> throw new IllegalArgumentException("Đáp án không hợp lệ: " + answerText);
             };
-            default -> throw new IllegalArgumentException("Unknown question: " + questionText);
+            default -> throw new IllegalArgumentException("Câu hỏi không hợp lệ: " + questionText);
         };
     }
 
@@ -198,8 +198,6 @@ public class QuizService {
 
         // Lưu danh sách câu hỏi vào cơ sở dữ liệu
         List<QuizQuestion> savedQuestions = quizQuestionRepository.saveAll(questions);
-
-
 
         // Tạo danh sách đáp án
         List<QuizAnswer> answers = new ArrayList<>();
@@ -593,6 +591,7 @@ public class QuizService {
             answerResponse.setId(answer.getId());
             answerResponse.setAnswerText(answer.getAnswer());
             answerResponse.setScore(answer.getScore());
+            answerResponse.setSkinType(answer.getSkinType()); // Bao gồm skinType
             return answerResponse;
         }).collect(Collectors.toList());
         response.setAnswers(answerResponses);
@@ -613,6 +612,7 @@ public class QuizService {
                         answerResponse.setId(answer.getId());
                         answerResponse.setAnswerText(answer.getAnswer());
                         answerResponse.setScore(answer.getScore());
+                        answerResponse.setSkinType(answer.getSkinType()); // Bao gồm skinType
                         return answerResponse;
                     }).collect(Collectors.toList());
                     response.setAnswers(answerResponses);
@@ -636,6 +636,7 @@ public class QuizService {
             answerResponse.setId(answer.getId());
             answerResponse.setAnswerText(answer.getAnswer());
             answerResponse.setScore(answer.getScore());
+            answerResponse.setSkinType(answer.getSkinType()); // Bao gồm skinType
             return answerResponse;
         }).collect(Collectors.toList());
         response.setAnswers(answerResponses);
@@ -675,6 +676,7 @@ public class QuizService {
             answerResponse.setId(answer.getId());
             answerResponse.setAnswerText(answer.getAnswer());
             answerResponse.setScore(answer.getScore());
+            answerResponse.setSkinType(answer.getSkinType()); // Bao gồm skinType
             return answerResponse;
         }).collect(Collectors.toList());
         response.setAnswers(answerResponses);
